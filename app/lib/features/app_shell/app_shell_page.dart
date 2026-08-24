@@ -42,11 +42,6 @@ class _AppShellPageState extends State<AppShellPage> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: "记录",
-          ),
-          NavigationDestination(
             icon: Icon(Icons.checkroom_outlined),
             selectedIcon: Icon(Icons.checkroom),
             label: "衣橱",
@@ -60,6 +55,11 @@ class _AppShellPageState extends State<AppShellPage> {
             icon: Icon(Icons.wb_sunny_outlined),
             selectedIcon: Icon(Icons.wb_sunny),
             label: "今日推荐",
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month),
+            label: "记录",
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
