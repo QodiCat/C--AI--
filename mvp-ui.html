@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI衣橱 App 交互原型</title>
+  <style>
+    :root {
+      --page: #efede8;
+      --screen: #fbfaf7;
+      --card: #ffffff;
+      --soft: #f0eee9;
+      --ink: #24211d;
+      --sub: #777069;
+      --line: #e2ded7;
+      --green: #2f6b5f;
+      --green-2: #dceae5;
+      --red: #c96f66;
+      --gold: #b3843b;
+      --blue: #4d6673;
+      --shadow: 0 24px 70px rgba(36, 33, 29, 0.18);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 20% 15%, rgba(220, 234, 229, 0.86), transparent 30%),
+        linear-gradient(135deg, #fbfaf7 0%, var(--page) 100%);
+      color: var(--ink);
+    }
+
+    button, input { font: inherit; }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    .phone {
+      width: min(430px, 100vw);
+      height: min(920px, 100vh);
+      min-height: 720px;
+      padding: 10px;
+      border-radius: 36px;
+      background: #1f1d1a;
+      box-shadow: var(--shadow);
+    }
+
+    .app {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 28px;
+      background: var(--screen);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 34px;
+      padding: 0 22px;
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .content {
+      overflow: auto;
+      padding: 8px 18px 20px;
+      scrollbar-width: none;
+    }
+
+    .content::-webkit-scrollbar { display: none; }
+
+    .head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .head h1 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .head p {
+      margin: 6px 0 0;
+      color: var(--sub);
+      font-size: 12px;
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      flex: 0 0 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--green-2);
+      color: var(--green);
+      font-weight: 850;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 214px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #d9d3ca;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(36, 33, 29, 0.76), rgba(36, 33, 29, 0.12)),
+        url("https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=900&q=80");
+      background-size: cover;
+      background-position: center 30%;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
+      width: 72%;
+      padding: 18px;
+      color: #fff;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .hero h2 {
+      margin: 18px 0 8px;
+      font-size: 25px;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.86);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      min-height: 38px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: var(--card);
+      box-shadow: inset 0 0 0 1px var(--line);
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .btn.primary {
+      background: var(--green);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .hero .btn {
+      min-height: 34px;
+      padding: 0 12px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.93);
+      color: var(--ink);
+      box-shadow: none;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 20px 0 10px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .link {
+      background: transparent;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      padding: 0;
+    }
+
+    .cards { display: grid; gap: 10px; }
+
+    .wardrobe {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .item {
+      min-width: 0;
+      aspect-ratio: 1 / 1.25;
+      padding: 8px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .item-art {
+      position: relative;
+      height: calc(100% - 28px);
+      min-height: 74px;
+      margin-bottom: 7px;
+      border-radius: 7px;
+      background: var(--soft);
+      overflow: hidden;
+      color: var(--green);
+    }
+
+    .item-art::before {
+      content: "";
+      position: absolute;
+      inset: 18% 25% 13%;
+      border-radius: 18px 18px 9px 9px;
+      background: currentColor;
+      opacity: 0.88;
+    }
+
+    .item-art.pants::before {
+      inset: 16% 31% 9%;
+      border-radius: 10px 10px 6px 6px;
+      clip-path: polygon(0 0, 100% 0, 88% 100%, 58% 100%, 50% 32%, 42% 100%, 12% 100%);
+    }
+
+    .item-art.shoe::before {
+      inset: auto 18% 28% 18%;
+      height: 24px;
+      border-radius: 999px 999px 999px 8px;
+    }
+
+    .item-art.bag::before {
+      inset: 31% 22% 19%;
+      border-radius: 9px;
+    }
+
+    .item strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .item span {
+      display: block;
+      margin-top: 3px;
+      color: var(--sub);
+      font-size: 10px;
+    }
+
+    .rec {
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      gap: 12px;
+      align-items: center;
+      min-height: 98px;
+      padding: 10px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .outfit-art {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      border-radius: 8px;
+      background: var(--soft);
+      overflow: hidden;
+    }
+
+    .piece {
+      position: absolute;
+      border-radius: 8px;
+    }
+
+    .piece.top { width: 32px; height: 30px; left: 12px; top: 12px; background: var(--green); }
+    .piece.bottom { width: 25px; height: 40px; left: 38px; top: 24px; background: #303532; }
+    .piece.shoe { width: 30px; height: 10px; left: 18px; bottom: 10px; border-radius: 999px; background: var(--red); }
+
+    .rec h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .rec p {
+      margin: 5px 0 8px;
+      color: var(--sub);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--sub);
+      font-size: 10px;
+      font-weight: 750;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      margin: 12px 0 14px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .toolbar::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex: 0 0 auto;
+      min-height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: var(--card);
+      box-shadow: inset 0 0 0 1px var(--line);
+      color: var(--sub);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .chip.active {
+      background: var(--green-2);
+      color: var(--green);
+      box-shadow: none;
+    }
+
+    .search {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      outline: 0;
+      background: var(--card);
+      padding: 0 15px;
+      color: var(--ink);
+    }
+
+    .log {
+      display: grid;
+      grid-template-columns: 54px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid var(--line);
+    }
+
+    .datebox {
+      display: grid;
+      place-items: center;
+      width: 54px;
+      height: 54px;
+      border-radius: 8px;
+      background: var(--soft);
+      color: var(--green);
+      font-weight: 850;
+      line-height: 1.05;
+      text-align: center;
+    }
+
+    .log h3 {
+      margin: 0 0 4px;
+      font-size: 13px;
+    }
+
+    .log p {
+      margin: 0;
+      color: var(--sub);
+      font-size: 12px;
+    }
+
+    .score {
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      border: 1px dashed #d6d1c8;
+      border-radius: 8px;
+      color: var(--sub);
+      text-align: center;
+      padding: 20px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .tabbar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 8px 10px 12px;
+      background: rgba(251, 250, 247, 0.96);
+      border-top: 1px solid var(--line);
+    }
+
+    .tab {
+      display: grid;
+      place-items: center;
+      min-height: 42px;
+      border-radius: 999px;
+      background: transparent;
+      color: var(--sub);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .tab.active {
+      background: var(--card);
+      color: var(--green);
+      box-shadow: 0 7px 18px rgba(36, 33, 29, 0.08);
+    }
+
+    .sheet-backdrop {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: flex-end;
+      background: rgba(36, 33, 29, 0.34);
+      z-index: 5;
+    }
+
+    .sheet-backdrop.show { display: flex; }
+
+    .sheet {
+      width: 100%;
+      max-height: 78%;
+      overflow: auto;
+      padding: 18px;
+      border-radius: 20px 20px 0 0;
+      background: var(--screen);
+      box-shadow: 0 -20px 60px rgba(36, 33, 29, 0.18);
+    }
+
+    .sheet h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .sheet p {
+      margin: 0 0 14px;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .progress {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: var(--soft);
+    }
+
+    .bar {
+      width: 0%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--green);
+      transition: width 0.35s ease;
+    }
+
+    .toast {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 78px;
+      display: none;
+      padding: 13px 14px;
+      border-radius: 8px;
+      background: rgba(36, 33, 29, 0.92);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 7;
+    }
+
+    .toast.show {
+      display: block;
+      animation: toast 2.1s ease forwards;
+    }
+
+    @keyframes toast {
+      0% { transform: translateY(12px); opacity: 0; }
+      14%, 84% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(10px); opacity: 0; }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        display: block;
+        background: var(--screen);
+      }
+
+      .phone {
+        width: 100vw;
+        height: 100vh;
+        min-height: 100vh;
+        padding: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background: var(--screen);
+      }
+
+      .app { border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="phone">
+    <section class="app" aria-label="AI衣橱手机端原型">
+      <div class="status">
+        <span>9:41</span>
+        <span>5G 86%</span>
+      </div>
+      <div id="content" class="content"></div>
+      <nav id="tabbar" class="tabbar" aria-label="底部导航"></nav>
+      <div id="sheetBackdrop" class="sheet-backdrop">
+        <div id="sheet" class="sheet"></div>
+      </div>
+      <div id="toast" class="toast"></div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      tab: "home",
+      category: "全部",
+      query: "",
+      recIndex: 0,
+      savedCount: 37,
+      items: [
+        { id: 1, name: "绿色针织衫", cat: "上衣", color: "#2f6b5f", season: "春夏", status: "可穿", type: "top" },
+        { id: 2, name: "黑色直筒裤", cat: "下装", color: "#303532", season: "四季", status: "可穿", type: "pants" },
+        { id: 3, name: "酒红低跟鞋", cat: "鞋子", color: "#c96f66", season: "春秋", status: "可穿", type: "shoe" },
+        { id: 4, name: "焦糖小号包", cat: "包袋", color: "#b3843b", season: "四季", status: "可穿", type: "bag" },
+        { id: 5, name: "白色衬衫", cat: "上衣", color: "#d8d3ca", season: "四季", status: "待清洗", type: "top" },
+        { id: 6, name: "蓝灰半裙", cat: "下装", color: "#4d6673", season: "春夏", status: "可穿", type: "pants" }
+      ],
+      recs: [
+        { title: "清爽通勤套装", scene: "通勤", weather: "26°C", reason: "避开最近穿过的黑色外套，用针织衫和直筒裤保持利落。", top: "#2f6b5f", bottom: "#303532", shoe: "#c96f66" },
+        { title: "周末咖啡散步", scene: "休闲", weather: "28°C", reason: "白色衬衫降低视觉重量，蓝灰下装适合轻松的下午场景。", top: "#d8d3ca", bottom: "#4d6673", shoe: "#b3843b" },
+        { title: "晚间约会搭配", scene: "约会", weather: "24°C", reason: "保留酒红色重点，搭配深色下装让整体更精致。", top: "#2f6b5f", bottom: "#303532", shoe: "#c96f66" }
+      ],
+      logs: [
+        { date: "08/21", title: "清爽通勤套装", meta: "通勤 · 舒适 · 上海", score: "4.8" },
+        { date: "08/18", title: "蓝灰半裙搭配", meta: "咖啡 · 轻便 · 多云", score: "4.5" },
+        { date: "08/12", title: "白衬衫会议装", meta: "会议 · 正式 · 室内", score: "4.2" }
+      ]
+    };
+
+    const tabs = [
+      { id: "home", label: "首页" },
+      { id: "wardrobe", label: "衣橱" },
+      { id: "match", label: "搭配" },
+      { id: "logs", label: "记录" }
+    ];
+
+    const content = document.getElementById("content");
+    const tabbar = document.getElementById("tabbar");
+    const sheetBackdrop = document.getElementById("sheetBackdrop");
+    const sheet = document.getElementById("sheet");
+    const toast = document.getElementById("toast");
+
+    function render() {
+      renderTabs();
+      if (state.tab === "home") renderHome();
+      if (state.tab === "wardrobe") renderWardrobe();
+      if (state.tab === "match") renderMatch();
+      if (state.tab === "logs") renderLogs();
+      content.scrollTop = 0;
+    }
+
+    function renderTabs() {
+      tabbar.innerHTML = tabs.map(tab => `
+        <button class="tab ${state.tab === tab.id ? "active" : ""}" data-tab="${tab.id}">${tab.label}</button>
+      `).join("");
+    }
+
+    function head(title, sub) {
+      return `
+        <header class="head">
+          <div>
+            <h1>${title}</h1>
+            <p>${sub}</p>
+          </div>
+          <button class="avatar" data-action="profile">Q</button>
+        </header>
+      `;
+    }
+
+    function outfitArt(rec) {
+      return `
+        <div class="outfit-art">
+          <i class="piece top" style="background:${rec.top}"></i>
+          <i class="piece bottom" style="background:${rec.bottom}"></i>
+          <i class="piece shoe" style="background:${rec.shoe}"></i>
+        </div>
+      `;
+    }
+
+    function itemCard(item) {
+      return `
+        <button class="item" data-item="${item.id}">
+          <div class="item-art ${item.type}" style="color:${item.color}"></div>
+          <strong>${item.name}</strong>
+          <span>${item.cat} · ${item.status}</span>
+        </button>
+      `;
+    }
+
+    function renderHome() {
+      const rec = state.recs[state.recIndex];
+      content.innerHTML = `
+        ${head("今日穿搭", `上海 · ${rec.weather} · ${rec.scene}`)}
+        <article class="hero">
+          <div class="hero-inner">
+            <span class="pill">AI 推荐 0${state.recIndex + 1}</span>
+            <h2>${rec.title}</h2>
+            <p>${rec.reason}</p>
+            <div class="row-actions">
+              <button class="btn" data-action="save">保存</button>
+              <button class="btn" data-action="swap">换一套</button>
+            </div>
+          </div>
+        </article>
+        <div class="section-title">
+          <h2>我的衣橱</h2>
+          <button class="link" data-goto="wardrobe">筛选</button>
+        </div>
+        <div class="wardrobe">${state.items.slice(0, 4).map(itemCard).join("")}</div>
+        <div class="section-title">
+          <h2>AI 搭配方案</h2>
+          <button class="link" data-goto="match">全部</button>
+        </div>
+        <div class="cards">
+          ${state.recs.map((item, index) => `
+            <button class="rec" data-rec="${index}">
+              ${outfitArt(item)}
+              <div>
+                <h3>${item.title}</h3>
+                <p>${item.reason}</p>
+                <div class="tags">
+                  <span class="tag">${item.scene}</span>
+                  <span class="tag">${item.weather}</span>
+                  <span class="tag">可穿</span>
+                </div>
+              </div>
+            </button>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderWardrobe() {
+      const cats = ["全部", "上衣", "下装", "鞋子", "包袋"];
+      const list = state.items.filter(item => {
+        const byCat = state.category === "全部" || item.cat === state.category;
+        const byQuery = item.name.includes(state.query.trim());
+        return byCat && byQuery;
+      });
+
+      content.innerHTML = `
+        ${head("我的衣橱", `${state.items.length} 件单品 · AI 已自动打标`)}
+        <input class="search" value="${state.query}" placeholder="搜索单品、颜色、场景" data-input="search" />
+        <div class="toolbar">
+          ${cats.map(cat => `<button class="chip ${state.category === cat ? "active" : ""}" data-category="${cat}">${cat}</button>`).join("")}
+        </div>
+        <div class="section-title">
+          <h2>单品列表</h2>
+          <button class="link" data-action="upload">上传</button>
+        </div>
+        ${list.length ? `<div class="wardrobe">${list.map(itemCard).join("")}</div>` : `<div class="empty">没有符合条件的单品<br>可以切换筛选或上传新衣物</div>`}
+      `;
+      const input = content.querySelector("[data-input='search']");
+      input.addEventListener("input", event => {
+        state.query = event.target.value;
+        renderWardrobe();
+      });
+      input.focus();
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+
+    function renderMatch() {
+      content.innerHTML = `
+        ${head("AI 搭配", "选择场景后生成 3 套可保存方案")}
+        <div class="toolbar">
+          ${["通勤", "休闲", "约会", "旅行"].map((scene, index) => `<button class="chip ${index === state.recIndex ? "active" : ""}" data-rec="${index % state.recs.length}">${scene}</button>`).join("")}
+        </div>
+        <button class="btn primary" style="width:100%; margin-bottom:14px;" data-action="generate">重新生成搭配</button>
+        <div class="cards">
+          ${state.recs.map((item, index) => `
+            <article class="rec">
+              ${outfitArt(item)}
+              <div>
+                <h3>${item.title}</h3>
+                <p>${item.reason}</p>
+                <div class="tags">
+                  <span class="tag">${item.scene}</span>
+                  <span class="tag">${item.weather}</span>
+                  <span class="tag">AI解释</span>
+                </div>
+                <div class="row-actions" style="margin-top:10px;">
+                  <button class="btn" data-save-rec="${index}">保存</button>
+                  <button class="btn" data-rec="${index}">预览</button>
+                </div>
+              </div>
+            </article>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderLogs() {
+      content.innerHTML = `
+        ${head("穿搭记录", `${state.savedCount} 条历史记录 · 最近 7 天不重复推荐`)}
+        <div class="section-title">
+          <h2>本月记录</h2>
+          <button class="link" data-action="save">记录今天</button>
+        </div>
+        <div class="cards">
+          ${state.logs.map(log => `
+            <article class="log">
+              <div class="datebox">${log.date.replace("/", "<br>")}</div>
+              <div>
+                <h3>${log.title}</h3>
+                <p>${log.meta}</p>
+              </div>
+              <div class="score">${log.score}</div>
+            </article>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.remove("show");
+      void toast.offsetWidth;
+      toast.classList.add("show");
+    }
+
+    function openSheet(html) {
+      sheet.innerHTML = html;
+      sheetBackdrop.classList.add("show");
+    }
+
+    function closeSheet() {
+      sheetBackdrop.classList.remove("show");
+    }
+
+    function openUpload() {
+      openSheet(`
+        <h2>上传单品</h2>
+        <p>模拟从相册选择一张日常衣物照片，AI 会自动识别品类、颜色、季节和状态。</p>
+        <div class="progress"><div id="bar" class="bar"></div></div>
+        <div class="row-actions">
+          <button class="btn primary" data-action="start-upload">开始识别</button>
+          <button class="btn" data-action="close-sheet">取消</button>
+        </div>
+      `);
+    }
+
+    function startUpload() {
+      const bar = document.getElementById("bar");
+      bar.style.width = "34%";
+      setTimeout(() => { bar.style.width = "72%"; }, 450);
+      setTimeout(() => {
+        bar.style.width = "100%";
+        state.items.unshift({
+          id: Date.now(),
+          name: "AI识别新上衣",
+          cat: "上衣",
+          color: "#6b7f75",
+          season: "春夏",
+          status: "可穿",
+          type: "top"
+        });
+        closeSheet();
+        state.tab = "wardrobe";
+        render();
+        showToast("已生成单品卡片，并完成 AI 标签");
+      }, 1100);
+    }
+
+    function saveCurrent(index = state.recIndex) {
+      const rec = state.recs[index];
+      state.savedCount += 1;
+      state.logs.unshift({
+        date: "08/21",
+        title: rec.title,
+        meta: `${rec.scene} · 舒适 · 上海`,
+        score: "未评"
+      });
+      showToast("已保存为今日穿搭记录");
+    }
+
+    function openItem(id) {
+      const item = state.items.find(entry => entry.id === id);
+      if (!item) return;
+      openSheet(`
+        <h2>${item.name}</h2>
+        <p>AI 标签：${item.cat} · ${item.season} · ${item.status}。用户可以确认或修改识别结果。</p>
+        <div class="wardrobe" style="grid-template-columns: 1fr 1fr;">
+          ${itemCard(item)}
+          <div class="empty" style="min-height:150px;">颜色<br>${item.color}<br><br>状态<br>${item.status}</div>
+        </div>
+        <div class="row-actions">
+          <button class="btn primary" data-mark-clean="${item.id}">标记可穿</button>
+          <button class="btn" data-action="close-sheet">关闭</button>
+        </div>
+      `);
+    }
+
+    document.addEventListener("click", event => {
+      const tab = event.target.closest("[data-tab]");
+      const action = event.target.closest("[data-action]");
+      const goto = event.target.closest("[data-goto]");
+      const category = event.target.closest("[data-category]");
+      const item = event.target.closest("[data-item]");
+      const rec = event.target.closest("[data-rec]");
+      const saveRec = event.target.closest("[data-save-rec]");
+      const markClean = event.target.closest("[data-mark-clean]");
+
+      if (tab) {
+        state.tab = tab.dataset.tab;
+        render();
+      }
+      if (goto) {
+        state.tab = goto.dataset.goto;
+        render();
+      }
+      if (category) {
+        state.category = category.dataset.category;
+        renderWardrobe();
+      }
+      if (item) openItem(Number(item.dataset.item));
+      if (rec) {
+        state.recIndex = Number(rec.dataset.rec) % state.recs.length;
+        state.tab = "home";
+        render();
+      }
+      if (saveRec) saveCurrent(Number(saveRec.dataset.saveRec));
+      if (markClean) {
+        const found = state.items.find(entry => entry.id === Number(markClean.dataset.markClean));
+        if (found) found.status = "可穿";
+        closeSheet();
+        render();
+        showToast("单品状态已更新");
+      }
+      if (!action) return;
+      if (action.dataset.action === "swap" || action.dataset.action === "generate") {
+        state.recIndex = (state.recIndex + 1) % state.recs.length;
+        showToast("已换成新的 AI 搭配方案");
+        render();
+      }
+      if (action.dataset.action === "save") saveCurrent();
+      if (action.dataset.action === "upload") openUpload();
+      if (action.dataset.action === "start-upload") startUpload();
+      if (action.dataset.action === "close-sheet") closeSheet();
+      if (action.dataset.action === "profile") {
+        openSheet(`
+          <h2>个人偏好</h2>
+          <p>城市：上海<br>偏好：极简、通勤、低饱和色<br>隐私：图片仅用于个人衣橱识别。</p>
+          <div class="row-actions">
+            <button class="btn primary" data-action="close-sheet">知道了</button>
+          </div>
+        `);
+      }
+    });
+
+    sheetBackdrop.addEventListener("click", event => {
+      if (event.target === sheetBackdrop) closeSheet();
+    });
+
+    render();
+  </script>
+</body>
+</html>
