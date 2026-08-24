@@ -5,14 +5,13 @@ class TodayRecommendationRepository {
 
   final ApiClient _apiClient;
 
-  Future<List<dynamic>> generateTodayRecommendation() async {
+  Future<List<dynamic>> generateTodayRecommendation(
+      {required String weather,
+      required String temperature,
+      required String scene}) async {
     final response = await _apiClient.post(
       "/ai/today-recommendation/generate",
-      body: {
-        "weather": "晴",
-        "temperature": "26",
-        "scene": "上班"
-      },
+      body: {"weather": weather, "temperature": temperature, "scene": scene},
     );
 
     return response["data"] as List<dynamic>;

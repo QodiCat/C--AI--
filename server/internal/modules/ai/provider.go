@@ -12,12 +12,12 @@ import (
 )
 
 type OutfitCandidate struct {
-	Name   string   `json:"name"`
+	Name    string   `json:"name"`
 	ItemIDs []string `json:"itemIds"`
-	Scene  string   `json:"scene"`
-	Style  string   `json:"style"`
-	Season string   `json:"season"`
-	Reason string   `json:"reason"`
+	Scene   string   `json:"scene"`
+	Style   string   `json:"style"`
+	Season  string   `json:"season"`
+	Reason  string   `json:"reason"`
 }
 
 type OutfitInput struct {

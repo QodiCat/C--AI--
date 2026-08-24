@@ -18,18 +18,27 @@ type generateOutfitsRequest struct {
 }
 
 type saveOutfitRequest struct {
-	Name   string   `json:"name" binding:"required"`
+	Name    string   `json:"name" binding:"required"`
 	ItemIDs []string `json:"itemIds" binding:"required"`
-	Scene  string   `json:"scene" binding:"required"`
-	Style  string   `json:"style" binding:"required"`
-	Season string   `json:"season" binding:"required"`
-	Reason string   `json:"reason" binding:"required"`
+	Scene   string   `json:"scene" binding:"required"`
+	Style   string   `json:"style" binding:"required"`
+	Season  string   `json:"season" binding:"required"`
+	Reason  string   `json:"reason" binding:"required"`
 }
 
 type todayRecommendationRequest struct {
 	Weather     string `json:"weather" binding:"required"`
 	Temperature string `json:"temperature" binding:"required"`
 	Scene       string `json:"scene" binding:"required"`
+}
+
+type replaceItemRequest struct {
+	ItemIDs []string `json:"itemIds" binding:"required,min=1"`
+	ItemID  string   `json:"itemId" binding:"required"`
+}
+type feedbackRequest struct {
+	CandidateName string `json:"candidateName" binding:"required"`
+	Feedback      string `json:"feedback" binding:"required,oneof=like dislike"`
 }
 
 func RegisterRoutes(router *gin.Engine, service *ai.Service) {
@@ -96,5 +105,27 @@ func RegisterRoutes(router *gin.Engine, service *ai.Service) {
 		}
 
 		httpapi.OK(c, result)
+	})
+
+	router.POST("/ai/outfits/replace-item", func(c *gin.Context) {
+		var req replaceItemRequest
+		if c.ShouldBindJSON(&req) != nil {
+			httpapi.Error(c, 400, "INVALID_REQUEST", "请求参数不合法")
+			return
+		}
+		result, err := service.ReplaceItem(req.ItemIDs, req.ItemID)
+		if err != nil {
+			httpapi.Error(c, 422, "NO_REPLACEMENT", err.Error())
+			return
+		}
+		httpapi.OK(c, result)
+	})
+	router.POST("/ai/outfits/feedback", func(c *gin.Context) {
+		var req feedbackRequest
+		if c.ShouldBindJSON(&req) != nil {
+			httpapi.Error(c, 400, "INVALID_REQUEST", "反馈参数不合法")
+			return
+		}
+		httpapi.OK(c, gin.H{"recorded": true, "feedback": req.Feedback})
 	})
 }

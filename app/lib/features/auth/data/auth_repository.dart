@@ -8,10 +8,7 @@ class AuthRepository {
   Future<Map<String, dynamic>> login() {
     return _apiClient.post(
       "/auth/login",
-      body: {
-        "loginType": "phone",
-        "credential": "demo-login-token"
-      },
+      body: {"loginType": "phone", "credential": "demo-login-token"},
     );
   }
 }

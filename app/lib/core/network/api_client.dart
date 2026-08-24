@@ -13,7 +13,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> get(String path) async {
     final response = await _httpClient.get(Uri.parse("$baseUrl$path"));
-    return _decode(response.body);
+    return _decode(response);
   }
 
   Future<Map<String, dynamic>> post(
@@ -28,7 +28,7 @@ class ApiClient {
       body: jsonEncode(body ?? <String, dynamic>{}),
     );
 
-    return _decode(response.body);
+    return _decode(response);
   }
 
   Future<Map<String, dynamic>> patch(
@@ -43,10 +43,27 @@ class ApiClient {
       body: jsonEncode(body ?? <String, dynamic>{}),
     );
 
-    return _decode(response.body);
+    return _decode(response);
   }
 
-  Map<String, dynamic> _decode(String responseBody) {
-    return jsonDecode(responseBody) as Map<String, dynamic>;
+  Future<Map<String, dynamic>> delete(String path) async {
+    final response = await _httpClient.delete(Uri.parse("$baseUrl$path"));
+    return _decode(response);
   }
+
+  Map<String, dynamic> _decode(http.Response response) {
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    if (response.statusCode >= 400 || decoded["success"] != true) {
+      final error = decoded["error"] as Map<String, dynamic>?;
+      throw ApiException(error?["message"]?.toString() ?? "请求失败");
+    }
+    return decoded;
+  }
+}
+
+class ApiException implements Exception {
+  const ApiException(this.message);
+  final String message;
+  @override
+  String toString() => message;
 }

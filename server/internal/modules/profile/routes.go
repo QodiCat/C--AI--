@@ -12,9 +12,14 @@ import (
 )
 
 type updateProfileRequest struct {
-	Nickname string `json:"nickname" binding:"required"`
-	City     string `json:"city" binding:"required"`
-	BodyType string `json:"bodyType" binding:"required"`
+	Nickname  string  `json:"nickname"`
+	AvatarURL string  `json:"avatarUrl"`
+	City      string  `json:"city"`
+	BodyType  string  `json:"bodyType"`
+	Gender    string  `json:"gender"`
+	AgeRange  string  `json:"ageRange"`
+	Height    float64 `json:"height"`
+	Weight    float64 `json:"weight"`
 }
 
 type updatePreferencesRequest struct {
@@ -50,8 +55,13 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		}
 
 		user.Nickname = req.Nickname
+		user.AvatarURL = req.AvatarURL
 		user.City = req.City
 		user.BodyType = req.BodyType
+		user.Gender = req.Gender
+		user.AgeRange = req.AgeRange
+		user.Height = req.Height
+		user.Weight = req.Weight
 		user.UpdatedAt = time.Now()
 
 		if err := db.Save(&user).Error; err != nil {
@@ -108,5 +118,21 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		}
 
 		httpapi.OK(c, user)
+	})
+
+	router.DELETE("/me", func(c *gin.Context) {
+		err := db.Transaction(func(tx *gorm.DB) error {
+			for _, value := range []any{&models.Session{}, &models.AITask{}, &models.WearLog{}, &models.Outfit{}, &models.Item{}} {
+				if err := tx.Where("user_id = ?", "user_demo").Delete(value).Error; err != nil {
+					return err
+				}
+			}
+			return tx.Delete(&models.User{}, "id = ?", "user_demo").Error
+		})
+		if err != nil {
+			httpapi.Error(c, 500, "ACCOUNT_DELETE_FAILED", "注销账号失败")
+			return
+		}
+		httpapi.OK(c, gin.H{"deleted": true})
 	})
 }

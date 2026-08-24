@@ -4,6 +4,7 @@ import "../ai_stylist/presentation/ai_stylist_page.dart";
 import "../profile/presentation/profile_page.dart";
 import "../today_recommendation/presentation/today_recommendation_page.dart";
 import "../wardrobe/presentation/wardrobe_page.dart";
+import "../wear_history/presentation/wear_history_page.dart";
 
 class AppShellPage extends StatefulWidget {
   const AppShellPage({super.key});
@@ -19,6 +20,7 @@ class _AppShellPageState extends State<AppShellPage> {
     WardrobePage(),
     AiStylistPage(),
     TodayRecommendationPage(),
+    WearHistoryPage(),
     ProfilePage(),
   ];
 
@@ -39,6 +41,11 @@ class _AppShellPageState extends State<AppShellPage> {
           });
         },
         destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month),
+            label: "记录",
+          ),
           NavigationDestination(
             icon: Icon(Icons.checkroom_outlined),
             selectedIcon: Icon(Icons.checkroom),

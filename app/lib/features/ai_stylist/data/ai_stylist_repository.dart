@@ -5,18 +5,32 @@ class AiStylistRepository {
 
   final ApiClient _apiClient;
 
-  Future<List<dynamic>> generateOutfits() async {
+  Future<List<dynamic>> generateOutfits(
+      {required String scene,
+      required String season,
+      required String weather,
+      required String temperature,
+      required String style}) async {
     final response = await _apiClient.post(
       "/ai/outfits/generate",
       body: {
-        "scene": "通勤",
-        "season": "秋",
-        "weather": "晴",
-        "temperature": "24",
-        "preferredStyle": "极简通勤"
+        "scene": scene,
+        "season": season,
+        "weather": weather,
+        "temperature": temperature,
+        "preferredStyle": style
       },
     );
 
     return response["data"] as List<dynamic>;
+  }
+
+  Future<void> save(Map<String, dynamic> value) async {
+    await _apiClient.post("/ai/outfits/save", body: value);
+  }
+
+  Future<void> feedback(String name, String feedback) async {
+    await _apiClient.post("/ai/outfits/feedback",
+        body: {"candidateName": name, "feedback": feedback});
   }
 }

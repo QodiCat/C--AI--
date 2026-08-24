@@ -11,8 +11,11 @@ import (
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/infrastructure/database"
 	"ai-closet-server/internal/modules/ai"
+	"ai-closet-server/internal/modules/auth"
+	"ai-closet-server/internal/modules/imageprocess"
 	"ai-closet-server/internal/modules/item"
 	"ai-closet-server/internal/modules/oss"
+	"ai-closet-server/internal/modules/outfit"
 	"ai-closet-server/internal/modules/profile"
 	"ai-closet-server/internal/modules/recommendation"
 	"ai-closet-server/internal/modules/wearlog"
@@ -46,7 +49,7 @@ func NewApp() (*App, error) {
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{cfg.CORSOrigin},
-		AllowMethods:     []string{"GET", "POST", "PATCH", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}))
@@ -61,7 +64,10 @@ func NewApp() (*App, error) {
 	aiProvider := ai.NewProvider(cfg)
 	aiService := ai.NewService(db, aiProvider)
 
+	auth.RegisterRoutes(router, db)
 	item.RegisterRoutes(router, db)
+	imageprocess.RegisterRoutes(router, db)
+	outfit.RegisterRoutes(router, db)
 	profile.RegisterRoutes(router, db)
 	recommendation.RegisterRoutes(router, aiService)
 	wearlog.RegisterRoutes(router, db)

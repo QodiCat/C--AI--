@@ -27,6 +27,7 @@ func AutoMigrate(db *gorm.DB) error {
 		&models.Outfit{},
 		&models.WearLog{},
 		&models.AITask{},
+		&models.Session{},
 	)
 }
 
