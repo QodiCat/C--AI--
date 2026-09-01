@@ -1,10 +1,10 @@
 import "package:flutter/material.dart";
 
 ThemeData buildAppTheme() {
-  const background = Color(0xFFF6F1EA);
-  const panel = Color(0xFFFFFCF7);
+  const background = Color(0xFFFAF8F4);
+  const panel = Color(0xFFFFFFFF);
   const primaryText = Color(0xFF1D1B18);
-  const accent = Color(0xFF7C6A58);
+  const accent = Color(0xFF718867);
 
   return ThemeData(
     colorScheme: ColorScheme.fromSeed(
@@ -14,9 +14,10 @@ ThemeData buildAppTheme() {
       primary: accent,
     ),
     scaffoldBackgroundColor: background,
+    fontFamilyFallback: const ["Noto Sans CJK SC", "sans-serif"],
     textTheme: const TextTheme(
       headlineMedium: TextStyle(
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: FontWeight.w700,
         color: primaryText,
       ),
@@ -35,8 +36,30 @@ ThemeData buildAppTheme() {
       color: panel,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
       ),
+    ),
+    dividerTheme:
+        const DividerThemeData(color: Color(0xFFEDE8E0), thickness: 1),
+    navigationBarTheme: NavigationBarThemeData(
+      height: 70,
+      backgroundColor: Colors.white,
+      indicatorColor: const Color(0xFFE5EDE1),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
+            fontSize: 11,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w700
+                : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? accent
+                : const Color(0xFF77736D),
+          )),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+          minimumSize: const Size(0, 50),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
     ),
   );
 }

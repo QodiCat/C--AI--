@@ -27,12 +27,8 @@ class _AppShellPageState extends State<AppShellPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 240),
-          child: _pages[_currentIndex],
-        ),
-      ),
+      body:
+          SafeArea(child: IndexedStack(index: _currentIndex, children: _pages)),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (value) {
@@ -54,7 +50,7 @@ class _AppShellPageState extends State<AppShellPage> {
           NavigationDestination(
             icon: Icon(Icons.wb_sunny_outlined),
             selectedIcon: Icon(Icons.wb_sunny),
-            label: "今日推荐",
+            label: "推荐",
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),

@@ -1,175 +1,180 @@
-import "dart:convert";
 import "package:flutter/material.dart";
-import "../../../core/network/api_client.dart";
-import "../../../core/network/app_config.dart";
-import "../data/profile_repository.dart";
 
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
   @override
-  State<ProfilePage> createState() => _State();
-}
-
-class _State extends State<ProfilePage> {
-  late final repo = ProfileRepository(ApiClient(baseUrl: AppConfig.apiBaseUrl));
-  Map<String, dynamic>? user;
-  bool loading = true;
-  String? error;
-  final styles = [
-    "极简",
-    "通勤",
-    "休闲",
-    "运动",
-    "街头",
-    "复古",
-    "学院",
-    "甜美",
-    "优雅",
-    "正式",
-    "户外"
-  ];
-  @override
-  void initState() {
-    super.initState();
-    load();
-  }
-
-  Future<void> load() async {
-    try {
-      final v = await repo.fetch();
-      if (mounted) setState(() => user = v);
-    } catch (e) {
-      if (mounted) setState(() => error = e.toString());
-    } finally {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  List<String> get selected {
-    try {
-      return (jsonDecode(user?["stylePreferences"] ?? "[]") as List)
-          .cast<String>();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<void> edit() async {
-    final name = TextEditingController(text: user?["nickname"]),
-        city = TextEditingController(text: user?["city"]),
-        body = TextEditingController(text: user?["bodyType"]);
-    final yes = await showDialog<bool>(
-        context: context,
-        builder: (c) => AlertDialog(
-                title: const Text("编辑资料"),
-                content: Column(mainAxisSize: MainAxisSize.min, children: [
-                  TextField(
-                      controller: name,
-                      decoration: const InputDecoration(labelText: "昵称")),
-                  TextField(
-                      controller: city,
-                      decoration: const InputDecoration(labelText: "城市")),
-                  TextField(
-                      controller: body,
-                      decoration: const InputDecoration(labelText: "体型"))
-                ]),
-                actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(c, false),
-                      child: const Text("取消")),
-                  FilledButton(
-                      onPressed: () => Navigator.pop(c, true),
-                      child: const Text("保存"))
-                ]));
-    if (yes == true) {
-      await repo.update(name.text, city.text, body.text);
-      await load();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (loading) return const Center(child: CircularProgressIndicator());
-    if (error != null) return Center(child: Text(error!));
-    final picked = selected;
-    return ListView(
-        key: const ValueKey("profile-page"),
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text("个人中心", style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 16),
-          Card(
-              child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person)),
-                  title: Text(user?["nickname"]?.toString().isNotEmpty == true
-                      ? user!["nickname"]
-                      : "未设置昵称"),
-                  subtitle: Text(
-                      "${user?["city"] ?? "未设置城市"} · ${user?["bodyType"] ?? "未设置体型"}"),
-                  trailing: IconButton(
-                      onPressed: edit, icon: const Icon(Icons.edit_outlined)))),
-          const SizedBox(height: 12),
-          Card(
-              child: Padding(
-                  padding: const EdgeInsets.all(16),
+  Widget build(BuildContext context) => Scaffold(
+          body: ListView(
+              key: const ValueKey("profile-page"),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+              children: [
+            Text("个人中心", style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 22),
+            Row(children: [
+              const CircleAvatar(
+                  radius: 34,
+                  backgroundColor: Color(0xFFE4D6C8),
+                  child:
+                      Icon(Icons.person, size: 40, color: Color(0xFF987B60))),
+              const SizedBox(width: 14),
+              const Expanded(
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("风格偏好",
-                            style: Theme.of(context).textTheme.titleLarge),
-                        const SizedBox(height: 8),
-                        Wrap(
-                            spacing: 8,
-                            children: styles
-                                .map((s) => FilterChip(
-                                    label: Text(s),
-                                    selected: picked.contains(s),
-                                    onSelected: (v) async {
-                                      final next = [...picked];
-                                      v ? next.add(s) : next.remove(s);
-                                      await repo.preferences(next);
-                                      await load();
-                                    }))
-                                .toList())
-                      ]))),
-          SwitchListTile(
-              title: const Text("允许匿名数据用于模型优化"),
-              subtitle: const Text("默认关闭，可随时修改"),
-              value: user?["allowModelTraining"] == true,
-              onChanged: (v) async {
-                await repo.privacy(v);
-                await load();
-              }),
-          const Divider(),
-          ListTile(
-              leading: const Icon(Icons.delete_forever_outlined),
-              title: const Text("注销账号"),
-              textColor: Theme.of(context).colorScheme.error,
-              iconColor: Theme.of(context).colorScheme.error,
-              onTap: () async {
-                final yes = await showDialog<bool>(
-                    context: context,
-                    builder: (c) => AlertDialog(
-                            title: const Text("确认注销账号？"),
-                            content: const Text("衣橱、搭配、穿搭记录和个人资料将被永久删除，且无法恢复。"),
-                            actions: [
-                              TextButton(
-                                  onPressed: () => Navigator.pop(c, false),
-                                  child: const Text("取消")),
-                              FilledButton(
-                                  onPressed: () => Navigator.pop(c, true),
-                                  child: const Text("确认注销"))
-                            ]));
-                if (yes == true) {
-                  await repo.deleteAccount();
-                  if (mounted) {
-                    setState(() {
-                      user = null;
-                      error = "账号已注销";
-                    });
-                  }
-                }
-              })
-        ]);
-  }
+                    Row(children: [
+                      Text("小衣橱",
+                          style: TextStyle(
+                              fontSize: 19, fontWeight: FontWeight.w800)),
+                      SizedBox(width: 7),
+                      _Vip()
+                    ]),
+                    SizedBox(height: 5),
+                    Text("发现更美的自己", style: TextStyle(color: Color(0xFF8A857E)))
+                  ])),
+              IconButton(
+                  onPressed: () => _edit(context),
+                  icon: const Icon(Icons.chevron_right))
+            ]),
+            const SizedBox(height: 24),
+            const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _Stat(number: "128", label: "穿搭记录"),
+                  _Stat(number: "36", label: "收藏搭配"),
+                  _Stat(number: "12", label: "关注品牌")
+                ]),
+            const SizedBox(height: 22),
+            _MenuGroup(children: [
+              _Menu(
+                  icon: Icons.person_outline,
+                  title: "基础资料",
+                  onTap: () => _edit(context)),
+              _Menu(
+                  icon: Icons.favorite_border,
+                  title: "风格偏好",
+                  onTap: () => _message(context, "极简 · 通勤 · 优雅")),
+              _Menu(
+                  icon: Icons.image_outlined,
+                  title: "图片是否用于模型优化",
+                  value: "仅自己可见",
+                  onTap: () => _message(context, "隐私设置已开启")),
+              _Menu(
+                  icon: Icons.lock_outline,
+                  title: "隐私设置",
+                  onTap: () => _message(context, "隐私设置"))
+            ]),
+            const SizedBox(height: 14),
+            _MenuGroup(children: [
+              _Menu(
+                  icon: Icons.help_outline,
+                  title: "帮助与反馈",
+                  onTap: () => _message(context, "帮助与反馈")),
+              _Menu(
+                  icon: Icons.info_outline,
+                  title: "关于我们",
+                  onTap: () => _message(context, "AI衣橱 v0.1.0"))
+            ]),
+            const SizedBox(height: 28),
+            OutlinedButton(
+                onPressed: () => _message(context, "已退出登录"),
+                style: _buttonStyle(
+                    const Color(0xFF4F4B46), const Color(0xFFD9D3CB)),
+                child: const Text("退出登录")),
+            const SizedBox(height: 12),
+            OutlinedButton(
+                onPressed: () => _message(context, "演示版本不会实际注销账号"),
+                style: _buttonStyle(
+                    const Color(0xFFD36B6B), const Color(0xFFE7B4B4)),
+                child: const Text("注销账号")),
+          ]));
+  ButtonStyle _buttonStyle(
+          Color color, Color border) =>
+      OutlinedButton.styleFrom(
+          minimumSize: const Size.fromHeight(48),
+          foregroundColor: color,
+          side: BorderSide(color: border),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)));
+  void _message(BuildContext c, String s) =>
+      ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(s)));
+  void _edit(BuildContext c) => showDialog(
+      context: c,
+      builder: (_) => AlertDialog(
+              title: const Text("编辑基础资料"),
+              content: const Column(mainAxisSize: MainAxisSize.min, children: [
+                TextField(decoration: InputDecoration(labelText: "昵称")),
+                TextField(decoration: InputDecoration(labelText: "所在城市")),
+                TextField(decoration: InputDecoration(labelText: "体型"))
+              ]),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(c), child: const Text("取消")),
+                FilledButton(
+                    onPressed: () => Navigator.pop(c), child: const Text("保存"))
+              ]));
+}
+
+class _Vip extends StatelessWidget {
+  const _Vip();
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+          color: const Color(0xFFF4DEAD),
+          borderRadius: BorderRadius.circular(8)),
+      child: const Text("VIP",
+          style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF8E681C))));
+}
+
+class _Stat extends StatelessWidget {
+  final String number, label;
+  const _Stat({required this.number, required this.label});
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        Text(number,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 3),
+        Text(label,
+            style: const TextStyle(fontSize: 12, color: Color(0xFF8A857E)))
+      ]);
+}
+
+class _MenuGroup extends StatelessWidget {
+  final List<Widget> children;
+  const _MenuGroup({required this.children});
+  @override
+  Widget build(BuildContext context) => Material(
+      color: Colors.white,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+          side: const BorderSide(color: Color(0xFFECE7DF)),
+          borderRadius: BorderRadius.circular(17)),
+      child: Column(children: children));
+}
+
+class _Menu extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? value;
+  final VoidCallback onTap;
+  const _Menu(
+      {required this.icon,
+      required this.title,
+      this.value,
+      required this.onTap});
+  @override
+  Widget build(BuildContext context) => ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: const Color(0xFF625F59)),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+      trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+        if (value != null)
+          Text(value!,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF96918A))),
+        const SizedBox(width: 4),
+        const Icon(Icons.chevron_right, color: Color(0xFFAAA59E))
+      ]));
 }
