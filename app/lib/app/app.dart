@@ -23,7 +23,8 @@ class _AiClosetAppState extends State<AiClosetApp> {
       theme: buildAppTheme(),
       home: _authenticated
           ? AppShellPage(onLogout: () => setState(() => _authenticated = false))
-          : AuthPage(onAuthenticated: () => setState(() => _authenticated = true)),
+          : AuthPage(
+              onAuthenticated: () => setState(() => _authenticated = true)),
     );
   }
 }

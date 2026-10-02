@@ -3,6 +3,10 @@ import "dart:typed_data";
 import "package:file_selector/file_selector.dart";
 import "package:flutter/material.dart";
 
+import "../../../core/network/api_client.dart";
+import "../../../core/network/app_config.dart";
+import "../data/wardrobe_repository.dart";
+
 class WardrobeItem {
   const WardrobeItem(this.name, this.category, this.color, this.icon, this.tint,
       {this.image});
@@ -178,8 +182,17 @@ class _WardrobePageState extends State<WardrobePage> {
     if (file == null) return;
     final bytes = await file.readAsBytes();
     if (!mounted) return;
-    final result = await Navigator.push<WardrobeItem>(context,
-        MaterialPageRoute(builder: (_) => UploadProcessingPage(image: bytes)));
+    final extension = file.name.split(".").last.toLowerCase();
+    final contentType = extension == "png"
+        ? "image/png"
+        : extension == "webp"
+            ? "image/webp"
+            : "image/jpeg";
+    final result = await Navigator.push<WardrobeItem>(
+        context,
+        MaterialPageRoute(
+            builder: (_) => UploadProcessingPage(
+                image: bytes, fileName: file.name, contentType: contentType)));
     if (result != null) setState(() => items.insert(0, result));
   }
 
@@ -303,24 +316,46 @@ class _AddChoice extends StatelessWidget {
 }
 
 class UploadProcessingPage extends StatefulWidget {
-  const UploadProcessingPage({super.key, required this.image});
+  const UploadProcessingPage(
+      {super.key,
+      required this.image,
+      required this.fileName,
+      required this.contentType});
   final Uint8List image;
+  final String fileName;
+  final String contentType;
   @override
   State<UploadProcessingPage> createState() => _UploadProcessingPageState();
 }
 
 class _UploadProcessingPageState extends State<UploadProcessingPage> {
+  late final _repository =
+      WardrobeRepository(ApiClient(baseUrl: AppConfig.apiBaseUrl));
+  String? _error;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 1400), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (_) => RecognitionResultPage(image: widget.image)));
-      }
-    });
+    _upload();
+  }
+
+  Future<void> _upload() async {
+    setState(() => _error = null);
+    try {
+      final uri = await _repository.uploadImage(
+          widget.image, widget.fileName, widget.contentType);
+      await _repository.recognizeImage(uri);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (_) => RecognitionResultPage(
+                  image: widget.image, originalImageUri: uri)));
+    } on ApiException catch (error) {
+      if (mounted) setState(() => _error = error.message);
+    } catch (_) {
+      if (mounted) setState(() => _error = "上传失败，请检查网络后重试");
+    }
   }
 
   @override
@@ -342,9 +377,18 @@ class _UploadProcessingPageState extends State<UploadProcessingPage> {
             const _ProgressTile(
                 icon: Icons.content_cut, title: "智能抠图", value: .4),
             const Spacer(),
-            const Center(
-                child: Text("识别完成后将自动进入确认页",
-                    style: TextStyle(color: Color(0xFF8C877F)))),
+            if (_error != null) ...[
+              Text(_error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              const SizedBox(height: 10),
+              FilledButton.icon(
+                  onPressed: _upload,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text("重新上传")),
+            ] else
+              const Center(
+                  child: Text("识别完成后将自动进入确认页",
+                      style: TextStyle(color: Color(0xFF8C877F)))),
             const SizedBox(height: 28),
           ])));
 }
@@ -393,8 +437,10 @@ class _ProgressTile extends StatelessWidget {
 }
 
 class RecognitionResultPage extends StatefulWidget {
-  const RecognitionResultPage({super.key, required this.image});
+  const RecognitionResultPage(
+      {super.key, required this.image, required this.originalImageUri});
   final Uint8List image;
+  final String originalImageUri;
   @override
   State<RecognitionResultPage> createState() => _RecognitionResultPageState();
 }
@@ -402,6 +448,38 @@ class RecognitionResultPage extends StatefulWidget {
 class _RecognitionResultPageState extends State<RecognitionResultPage> {
   final name = TextEditingController(text: "米白色棉质衬衫");
   String category = "上装", color = "米白";
+  bool saving = false;
+  late final repository =
+      WardrobeRepository(ApiClient(baseUrl: AppConfig.apiBaseUrl));
+
+  Future<void> _save() async {
+    setState(() => saving = true);
+    try {
+      await repository.createItem({
+        "name": name.text.trim().isEmpty ? "未命名单品" : name.text.trim(),
+        "categoryLevel1": category,
+        "categoryLevel2": "其他",
+        "primaryColor": color,
+        "originalImageUrl": widget.originalImageUri,
+        "managementStatus": "normal",
+        "wearableStatus": "wearable",
+      });
+      if (!mounted) return;
+      Navigator.pop(
+          context,
+          WardrobeItem(name.text.trim().isEmpty ? "未命名单品" : name.text.trim(),
+              category, color, Icons.checkroom, const Color(0xFFE9DED0),
+              image: widget.image));
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
       appBar: AppBar(
@@ -449,16 +527,8 @@ class _RecognitionResultPageState extends State<RecognitionResultPage> {
             label: const Text("继续添加更多图片")),
         const SizedBox(height: 12),
         FilledButton(
-            onPressed: () => Navigator.pop(
-                context,
-                WardrobeItem(
-                    name.text.trim().isEmpty ? "未命名单品" : name.text.trim(),
-                    category,
-                    color,
-                    Icons.checkroom,
-                    const Color(0xFFE9DED0),
-                    image: widget.image)),
-            child: const Text("保存并加入衣橱")),
+            onPressed: saving ? null : _save,
+            child: Text(saving ? "保存中..." : "保存并加入衣橱")),
       ]));
 }
 

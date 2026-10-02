@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/models"
@@ -106,7 +106,9 @@ func respondWithSession(c *gin.Context, db *gorm.DB, user models.User) {
 
 func newSecureID(prefix string) string {
 	buf := make([]byte, 24)
-	if _, err := rand.Read(buf); err != nil { return fmt.Sprintf("%s_%d", prefix, time.Now().UnixNano()) }
+	if _, err := rand.Read(buf); err != nil {
+		return fmt.Sprintf("%s_%d", prefix, time.Now().UnixNano())
+	}
 	return prefix + "_" + hex.EncodeToString(buf)
 }
 

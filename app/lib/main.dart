@@ -10,6 +10,6 @@ Future<void> main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-	await AuthSession.restore();
+  await AuthSession.restore();
   runApp(const AiClosetApp());
 }

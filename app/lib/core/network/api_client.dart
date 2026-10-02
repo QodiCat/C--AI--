@@ -15,11 +15,13 @@ class ApiClient {
 
   Map<String, String> get _headers => {
         "Content-Type": "application/json",
-        if (AuthSession.token != null) "Authorization": "Bearer ${AuthSession.token}",
+        if (AuthSession.token != null)
+          "Authorization": "Bearer ${AuthSession.token}",
       };
 
   Future<Map<String, dynamic>> get(String path) async {
-    final response = await _httpClient.get(Uri.parse("$baseUrl$path"), headers: _headers);
+    final response =
+        await _httpClient.get(Uri.parse("$baseUrl$path"), headers: _headers);
     return _decode(response);
   }
 
@@ -50,7 +52,8 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
-    final response = await _httpClient.delete(Uri.parse("$baseUrl$path"), headers: _headers);
+    final response =
+        await _httpClient.delete(Uri.parse("$baseUrl$path"), headers: _headers);
     return _decode(response);
   }
 

@@ -4,7 +4,7 @@
 
 - SQLite 保存用户、衣物元数据、搭配、穿搭记录和登录 Session。
 - 阿里云 OSS 保存原图、抠图、头像和穿搭照片。Bucket 应设置为私有。
-- 当前 OSS 接口已经约定用户隔离目录，但签名字段仍是占位值，上生产前必须接入阿里云 SDK 生成短期直传签名和临时读取 URL。
+- 后端生成 5 分钟有效的 PostObject 表单签名，限制对象路径、Content-Type 和 10MB 文件大小；读取时可通过 `/uploads/oss-url` 获取当前用户对象的 5 分钟临时 URL。客户端无需持有 OSS 密钥。
 
 对象路径：`users/{userId}/{originals|cutouts|wear-logs|avatars}/...`。
 
@@ -44,7 +44,7 @@ ALIYUN_OSS_ACCESS_KEY_SECRET=
 ## 发布前检查
 
 1. 域名已启用 HTTPS，`PUBLIC_ORIGIN` 与实际域名一致。
-2. OSS Bucket 为私有，直传签名和临时读取 URL 已真实实现。
+2. OSS Bucket 为私有，验证直传和临时读取 URL 可用。
 3. 备份并验证恢复 SQLite Volume。
 4. 修改或删除演示账号和演示数据。
 5. 为注册和登录增加 IP/账号限流、邮箱验证与找回密码流程。

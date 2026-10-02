@@ -39,17 +39,38 @@ func TestCoreMVPFlow(t *testing.T) {
 	}
 }
 
+func TestRegistrationAndAuthentication(t *testing.T) {
+	t.Setenv("DB_PATH", filepath.Join(t.TempDir(), "auth.db"))
+	app, err := NewApp()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	unauthorized := request(t, app, http.MethodGet, "/items", nil, "")
+	if unauthorized.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 without token, got %d", unauthorized.Code)
+	}
+
+	registered := call(t, app, http.MethodPost, "/auth/register", map[string]any{
+		"email": "new@example.com", "password": "strongpass", "nickname": "New User",
+	}, "")
+	token := registered["data"].(map[string]any)["accessToken"].(string)
+	items := call(t, app, http.MethodGet, "/items", nil, token)
+	if len(items["data"].([]any)) != 0 {
+		t.Fatal("new user must not see demo user's wardrobe")
+	}
+
+	duplicate := request(t, app, http.MethodPost, "/auth/register", map[string]any{
+		"email": "NEW@example.com", "password": "strongpass",
+	}, "")
+	if duplicate.Code != http.StatusConflict {
+		t.Fatalf("expected duplicate email conflict, got %d", duplicate.Code)
+	}
+}
+
 func call(t *testing.T, app *App, method, path string, body any, token string) map[string]any {
 	t.Helper()
-	var payload []byte
-	if body != nil {
-		payload, _ = json.Marshal(body)
-	}
-	req := httptest.NewRequest(method, path, bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	if token != "" { req.Header.Set("Authorization", "Bearer "+token) }
-	res := httptest.NewRecorder()
-	app.engine.ServeHTTP(res, req)
+	res := request(t, app, method, path, body, token)
 	if res.Code >= 400 {
 		t.Fatalf("%s %s returned %d: %s", method, path, res.Code, res.Body.String())
 	}
@@ -58,4 +79,20 @@ func call(t *testing.T, app *App, method, path string, body any, token string) m
 		t.Fatal(err)
 	}
 	return decoded
+}
+
+func request(t *testing.T, app *App, method, path string, body any, token string) *httptest.ResponseRecorder {
+	t.Helper()
+	var payload []byte
+	if body != nil {
+		payload, _ = json.Marshal(body)
+	}
+	req := httptest.NewRequest(method, path, bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	res := httptest.NewRecorder()
+	app.engine.ServeHTTP(res, req)
+	return res
 }

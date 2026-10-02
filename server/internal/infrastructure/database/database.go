@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
-	"gorm.io/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	"ai-closet-server/internal/models"
 )
@@ -38,7 +38,7 @@ func SeedDemoData(db *gorm.DB) error {
 		return err
 	}
 	if count > 0 {
-		return nil
+		return ensureDemoCredentials(db)
 	}
 
 	now := time.Now()
@@ -130,4 +130,24 @@ func SeedDemoData(db *gorm.DB) error {
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}).Error
+}
+
+func ensureDemoCredentials(db *gorm.DB) error {
+	var user models.User
+	if err := db.First(&user, "id = ?", "user_demo").Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil
+		}
+		return err
+	}
+	if user.Email != "" && user.PasswordHash != "" {
+		return nil
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte("demo12345"), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.Email = "demo@example.com"
+	user.PasswordHash = string(hash)
+	return db.Save(&user).Error
 }
