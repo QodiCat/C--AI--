@@ -2,6 +2,8 @@ import "dart:convert";
 
 import "package:http/http.dart" as http;
 
+import "auth_session.dart";
+
 class ApiClient {
   ApiClient({
     required this.baseUrl,
@@ -11,8 +13,13 @@ class ApiClient {
   final String baseUrl;
   final http.Client _httpClient;
 
+  Map<String, String> get _headers => {
+        "Content-Type": "application/json",
+        if (AuthSession.token != null) "Authorization": "Bearer ${AuthSession.token}",
+      };
+
   Future<Map<String, dynamic>> get(String path) async {
-    final response = await _httpClient.get(Uri.parse("$baseUrl$path"));
+    final response = await _httpClient.get(Uri.parse("$baseUrl$path"), headers: _headers);
     return _decode(response);
   }
 
@@ -22,9 +29,7 @@ class ApiClient {
   }) async {
     final response = await _httpClient.post(
       Uri.parse("$baseUrl$path"),
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: _headers,
       body: jsonEncode(body ?? <String, dynamic>{}),
     );
 
@@ -37,9 +42,7 @@ class ApiClient {
   }) async {
     final response = await _httpClient.patch(
       Uri.parse("$baseUrl$path"),
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: _headers,
       body: jsonEncode(body ?? <String, dynamic>{}),
     );
 
@@ -47,7 +50,7 @@ class ApiClient {
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
-    final response = await _httpClient.delete(Uri.parse("$baseUrl$path"));
+    final response = await _httpClient.delete(Uri.parse("$baseUrl$path"), headers: _headers);
     return _decode(response);
   }
 

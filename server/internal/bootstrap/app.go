@@ -65,6 +65,7 @@ func NewApp() (*App, error) {
 	aiService := ai.NewService(db, aiProvider)
 
 	auth.RegisterRoutes(router, db)
+	router.Use(auth.RequireAuth(db))
 	item.RegisterRoutes(router, db)
 	imageprocess.RegisterRoutes(router, db)
 	outfit.RegisterRoutes(router, db)

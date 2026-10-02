@@ -7,7 +7,8 @@ import "../wardrobe/presentation/wardrobe_page.dart";
 import "../wear_history/presentation/wear_history_page.dart";
 
 class AppShellPage extends StatefulWidget {
-  const AppShellPage({super.key});
+  const AppShellPage({super.key, required this.onLogout});
+  final VoidCallback onLogout;
 
   @override
   State<AppShellPage> createState() => _AppShellPageState();
@@ -16,19 +17,18 @@ class AppShellPage extends StatefulWidget {
 class _AppShellPageState extends State<AppShellPage> {
   int _currentIndex = 0;
 
-  final _pages = const [
-    WardrobePage(),
-    AiStylistPage(),
-    TodayRecommendationPage(),
-    WearHistoryPage(),
-    ProfilePage(),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final pages = [
+      const WardrobePage(),
+      const AiStylistPage(),
+      const TodayRecommendationPage(),
+      const WearHistoryPage(),
+      ProfilePage(onLogout: widget.onLogout),
+    ];
     return Scaffold(
       body:
-          SafeArea(child: IndexedStack(index: _currentIndex, children: _pages)),
+          SafeArea(child: IndexedStack(index: _currentIndex, children: pages)),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (value) {

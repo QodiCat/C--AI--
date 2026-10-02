@@ -7,6 +7,7 @@ import (
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
+	"golang.org/x/crypto/bcrypt"
 
 	"ai-closet-server/internal/models"
 )
@@ -41,8 +42,11 @@ func SeedDemoData(db *gorm.DB) error {
 	}
 
 	now := time.Now()
+	demoHash, _ := bcrypt.GenerateFromPassword([]byte("demo12345"), bcrypt.DefaultCost)
 	user := models.User{
 		ID:                 "user_demo",
+		Email:              "demo@example.com",
+		PasswordHash:       string(demoHash),
 		Nickname:           "Qodi",
 		LoginType:          "phone",
 		City:               "Shanghai",

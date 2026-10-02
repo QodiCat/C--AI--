@@ -22,8 +22,8 @@ func NewService(db *gorm.DB, provider Provider) *Service {
 	}
 }
 
-func (service *Service) GenerateOutfits(input OutfitInput) ([]OutfitCandidate, error) {
-	items, err := service.availableItems()
+func (service *Service) GenerateOutfits(userID string, input OutfitInput) ([]OutfitCandidate, error) {
+	items, err := service.availableItems(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func (service *Service) GenerateOutfits(input OutfitInput) ([]OutfitCandidate, e
 	}
 
 	input.Items = items
-	task, err := service.createTask("outfit_generation", input)
+	task, err := service.createTask(userID, "outfit_generation", input)
 	if err != nil {
 		return nil, err
 	}
@@ -47,14 +47,14 @@ func (service *Service) GenerateOutfits(input OutfitInput) ([]OutfitCandidate, e
 	return candidates, nil
 }
 
-func (service *Service) GenerateToday(input TodayInput) ([]OutfitCandidate, error) {
-	items, err := service.availableItems()
+func (service *Service) GenerateToday(userID string, input TodayInput) ([]OutfitCandidate, error) {
+	items, err := service.availableItems(userID)
 	if err != nil {
 		return nil, err
 	}
 
 	input.Items = items
-	task, err := service.createTask("today_recommendation", input)
+	task, err := service.createTask(userID, "today_recommendation", input)
 	if err != nil {
 		return nil, err
 	}
@@ -69,12 +69,12 @@ func (service *Service) GenerateToday(input TodayInput) ([]OutfitCandidate, erro
 	return candidates, nil
 }
 
-func (service *Service) SaveGeneratedOutfit(candidate OutfitCandidate) (*models.Outfit, error) {
+func (service *Service) SaveGeneratedOutfit(userID string, candidate OutfitCandidate) (*models.Outfit, error) {
 	if len(candidate.ItemIDs) == 0 {
 		return nil, fmt.Errorf("outfit must contain at least one item")
 	}
 	var count int64
-	if err := service.db.Model(&models.Item{}).Where("id IN ? AND management_status = ? AND wearable_status = ?", candidate.ItemIDs, "normal", "wearable").Count(&count).Error; err != nil || count != int64(len(candidate.ItemIDs)) {
+	if err := service.db.Model(&models.Item{}).Where("id IN ? AND user_id = ? AND management_status = ? AND wearable_status = ?", candidate.ItemIDs, userID, "normal", "wearable").Count(&count).Error; err != nil || count != int64(len(candidate.ItemIDs)) {
 		return nil, fmt.Errorf("outfit contains unavailable items")
 	}
 	now := time.Now()
@@ -82,7 +82,7 @@ func (service *Service) SaveGeneratedOutfit(candidate OutfitCandidate) (*models.
 
 	outfit := &models.Outfit{
 		ID:        fmt.Sprintf("outfit_%d", time.Now().UnixNano()),
-		UserID:    "user_demo",
+		UserID:    userID,
 		Name:      candidate.Name,
 		Scene:     candidate.Scene,
 		Style:     candidate.Style,
@@ -101,16 +101,16 @@ func (service *Service) SaveGeneratedOutfit(candidate OutfitCandidate) (*models.
 	return outfit, nil
 }
 
-func (service *Service) ReplaceItem(itemIDs []string, itemID string) (*OutfitCandidate, error) {
+func (service *Service) ReplaceItem(userID string, itemIDs []string, itemID string) (*OutfitCandidate, error) {
 	if len(itemIDs) == 0 {
 		return nil, fmt.Errorf("empty outfit")
 	}
 	var current models.Item
-	if service.db.First(&current, "id = ?", itemID).Error != nil {
+	if service.db.First(&current, "id = ? AND user_id = ?", itemID, userID).Error != nil {
 		return nil, fmt.Errorf("item not found")
 	}
 	var replacement models.Item
-	err := service.db.Where("category_level1 = ? AND id <> ? AND management_status = ? AND wearable_status = ?", current.CategoryLevel1, itemID, "normal", "wearable").Order("updated_at desc").First(&replacement).Error
+	err := service.db.Where("user_id = ? AND category_level1 = ? AND id <> ? AND management_status = ? AND wearable_status = ?", userID, current.CategoryLevel1, itemID, "normal", "wearable").Order("updated_at desc").First(&replacement).Error
 	if err != nil {
 		return nil, fmt.Errorf("暂无合适的替换单品")
 	}
@@ -129,23 +129,23 @@ func (service *Service) ReplaceItem(itemIDs []string, itemID string) (*OutfitCan
 	return &OutfitCandidate{Name: "局部焕新方案", ItemIDs: next, Reason: "已保留其余单品，并替换为衣橱中同品类的可穿单品。"}, nil
 }
 
-func (service *Service) availableItems() ([]models.Item, error) {
+func (service *Service) availableItems(userID string) ([]models.Item, error) {
 	var items []models.Item
 	err := service.db.
-		Where("management_status = ? AND wearable_status = ?", "normal", "wearable").
+		Where("user_id = ? AND management_status = ? AND wearable_status = ?", userID, "normal", "wearable").
 		Order("created_at desc").
 		Find(&items).Error
 
 	return items, err
 }
 
-func (service *Service) createTask(taskType string, payload any) (*models.AITask, error) {
+func (service *Service) createTask(userID string, taskType string, payload any) (*models.AITask, error) {
 	requestPayload, _ := json.Marshal(payload)
 	now := time.Now()
 
 	task := &models.AITask{
 		ID:             fmt.Sprintf("task_%d", time.Now().UnixNano()),
-		UserID:         "user_demo",
+		UserID:         userID,
 		TaskType:       taskType,
 		Status:         "processing",
 		RequestPayload: string(requestPayload),

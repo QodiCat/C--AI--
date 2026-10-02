@@ -3,6 +3,7 @@ package imageprocess
 import (
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/models"
+	"ai-closet-server/internal/modules/auth"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			candidates = append(candidates, map[string]any{"candidateId": fmt.Sprintf("candidate_%d", i+1), "originalImageUrl": url, "cutoutImageUrl": url, "name": fmt.Sprintf("待确认单品 %d", i+1), "categoryLevel1": "上装", "categoryLevel2": "其他上装", "primaryColor": "待确认", "seasons": []string{}, "styles": []string{}, "scenes": []string{}})
 		}
 		result, _ := json.Marshal(candidates)
-		task := models.AITask{ID: fmt.Sprintf("task_%d", now.UnixNano()), UserID: "user_demo", TaskType: "item_recognition", Status: "success", RequestPayload: string(raw), ResultPayload: string(result), CreatedAt: now, UpdatedAt: now}
+		task := models.AITask{ID: fmt.Sprintf("task_%d", now.UnixNano()), UserID: auth.CurrentUserID(c), TaskType: "item_recognition", Status: "success", RequestPayload: string(raw), ResultPayload: string(result), CreatedAt: now, UpdatedAt: now}
 		if db.Create(&task).Error != nil {
 			httpapi.Error(c, 500, "TASK_CREATE_FAILED", "创建识别任务失败")
 			return
@@ -38,7 +39,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	})
 	router.GET("/ai/tasks/:taskId", func(c *gin.Context) {
 		var task models.AITask
-		if db.First(&task, "id = ?", c.Param("taskId")).Error != nil {
+		if db.First(&task, "id = ? AND user_id = ?", c.Param("taskId"), auth.CurrentUserID(c)).Error != nil {
 			httpapi.Error(c, 404, "TASK_NOT_FOUND", "未找到任务")
 			return
 		}

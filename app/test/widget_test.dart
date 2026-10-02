@@ -10,12 +10,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ai_closet_app/app/app.dart';
 
 void main() {
-  testWidgets('renders the main navigation', (WidgetTester tester) async {
+  testWidgets('renders the authentication page', (WidgetTester tester) async {
     await tester.pumpWidget(const AiClosetApp());
-    expect(find.text('衣橱'), findsOneWidget);
-    expect(find.text('AI搭配'), findsOneWidget);
-    expect(find.text('今日推荐'), findsOneWidget);
-    expect(find.text('记录'), findsOneWidget);
-    expect(find.text('我的'), findsOneWidget);
+    expect(find.text('AI衣橱'), findsOneWidget);
+    expect(find.text('登录'), findsOneWidget);
+    expect(find.text('没有账号？立即注册'), findsOneWidget);
   });
 }

@@ -7,6 +7,7 @@ import (
 
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/modules/ai"
+	"ai-closet-server/internal/modules/auth"
 )
 
 type generateOutfitsRequest struct {
@@ -49,7 +50,7 @@ func RegisterRoutes(router *gin.Engine, service *ai.Service) {
 			return
 		}
 
-		result, err := service.GenerateOutfits(ai.OutfitInput{
+		result, err := service.GenerateOutfits(auth.CurrentUserID(c), ai.OutfitInput{
 			Scene:          req.Scene,
 			Season:         req.Season,
 			Weather:        req.Weather,
@@ -71,7 +72,7 @@ func RegisterRoutes(router *gin.Engine, service *ai.Service) {
 			return
 		}
 
-		result, err := service.SaveGeneratedOutfit(ai.OutfitCandidate{
+		result, err := service.SaveGeneratedOutfit(auth.CurrentUserID(c), ai.OutfitCandidate{
 			Name:    req.Name,
 			ItemIDs: req.ItemIDs,
 			Scene:   req.Scene,
@@ -94,7 +95,7 @@ func RegisterRoutes(router *gin.Engine, service *ai.Service) {
 			return
 		}
 
-		result, err := service.GenerateToday(ai.TodayInput{
+		result, err := service.GenerateToday(auth.CurrentUserID(c), ai.TodayInput{
 			Weather:     req.Weather,
 			Temperature: req.Temperature,
 			Scene:       req.Scene,
@@ -113,7 +114,7 @@ func RegisterRoutes(router *gin.Engine, service *ai.Service) {
 			httpapi.Error(c, 400, "INVALID_REQUEST", "请求参数不合法")
 			return
 		}
-		result, err := service.ReplaceItem(req.ItemIDs, req.ItemID)
+		result, err := service.ReplaceItem(auth.CurrentUserID(c), req.ItemIDs, req.ItemID)
 		if err != nil {
 			httpapi.Error(c, 422, "NO_REPLACEMENT", err.Error())
 			return

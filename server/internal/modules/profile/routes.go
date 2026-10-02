@@ -9,6 +9,7 @@ import (
 
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/models"
+	"ai-closet-server/internal/modules/auth"
 )
 
 type updateProfileRequest struct {
@@ -32,8 +33,9 @@ type updatePrivacyRequest struct {
 
 func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	router.GET("/me", func(c *gin.Context) {
+		userID := auth.CurrentUserID(c)
 		var user models.User
-		if err := db.First(&user, "id = ?", "user_demo").Error; err != nil {
+		if err := db.First(&user, "id = ?", userID).Error; err != nil {
 			httpapi.Error(c, http.StatusNotFound, "USER_NOT_FOUND", "未找到当前用户")
 			return
 		}
@@ -42,6 +44,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	})
 
 	router.PATCH("/me/profile", func(c *gin.Context) {
+		userID := auth.CurrentUserID(c)
 		var req updateProfileRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			httpapi.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "请求参数不合法")
@@ -49,7 +52,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		}
 
 		var user models.User
-		if err := db.First(&user, "id = ?", "user_demo").Error; err != nil {
+		if err := db.First(&user, "id = ?", userID).Error; err != nil {
 			httpapi.Error(c, http.StatusNotFound, "USER_NOT_FOUND", "未找到当前用户")
 			return
 		}
@@ -73,6 +76,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	})
 
 	router.PATCH("/me/style-preferences", func(c *gin.Context) {
+		userID := auth.CurrentUserID(c)
 		var req updatePreferencesRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			httpapi.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "请求参数不合法")
@@ -80,7 +84,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		}
 
 		var user models.User
-		if err := db.First(&user, "id = ?", "user_demo").Error; err != nil {
+		if err := db.First(&user, "id = ?", userID).Error; err != nil {
 			httpapi.Error(c, http.StatusNotFound, "USER_NOT_FOUND", "未找到当前用户")
 			return
 		}
@@ -97,6 +101,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	})
 
 	router.PATCH("/me/privacy", func(c *gin.Context) {
+		userID := auth.CurrentUserID(c)
 		var req updatePrivacyRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			httpapi.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "请求参数不合法")
@@ -104,7 +109,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		}
 
 		var user models.User
-		if err := db.First(&user, "id = ?", "user_demo").Error; err != nil {
+		if err := db.First(&user, "id = ?", userID).Error; err != nil {
 			httpapi.Error(c, http.StatusNotFound, "USER_NOT_FOUND", "未找到当前用户")
 			return
 		}
@@ -121,13 +126,14 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	})
 
 	router.DELETE("/me", func(c *gin.Context) {
+		userID := auth.CurrentUserID(c)
 		err := db.Transaction(func(tx *gorm.DB) error {
 			for _, value := range []any{&models.Session{}, &models.AITask{}, &models.WearLog{}, &models.Outfit{}, &models.Item{}} {
-				if err := tx.Where("user_id = ?", "user_demo").Delete(value).Error; err != nil {
+				if err := tx.Where("user_id = ?", userID).Delete(value).Error; err != nil {
 					return err
 				}
 			}
-			return tx.Delete(&models.User{}, "id = ?", "user_demo").Error
+			return tx.Delete(&models.User{}, "id = ?", userID).Error
 		})
 		if err != nil {
 			httpapi.Error(c, 500, "ACCOUNT_DELETE_FAILED", "注销账号失败")

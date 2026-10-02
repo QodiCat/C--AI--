@@ -9,6 +9,7 @@ import (
 
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/models"
+	"ai-closet-server/internal/modules/auth"
 )
 
 type createItemRequest struct {
@@ -62,8 +63,9 @@ type updateStatusRequest struct {
 
 func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	router.GET("/items", func(c *gin.Context) {
+		userID := auth.CurrentUserID(c)
 		var items []models.Item
-		query := db.Model(&models.Item{}).Where("management_status <> ?", "discarded")
+		query := db.Model(&models.Item{}).Where("user_id = ? AND management_status <> ?", userID, "discarded")
 		if value := c.Query("q"); value != "" {
 			like := "%" + value + "%"
 			query = query.Where("name LIKE ? OR brand LIKE ? OR custom_tags LIKE ?", like, like, like)
@@ -92,7 +94,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 
 	router.GET("/items/:itemId", func(c *gin.Context) {
 		var item models.Item
-		if err := db.First(&item, "id = ?", c.Param("itemId")).Error; err != nil {
+		if err := db.First(&item, "id = ? AND user_id = ?", c.Param("itemId"), auth.CurrentUserID(c)).Error; err != nil {
 			httpapi.Error(c, http.StatusNotFound, "ITEM_NOT_FOUND", "未找到对应单品")
 			return
 		}
@@ -110,7 +112,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		now := time.Now()
 		item := models.Item{
 			ID:             newID("item"),
-			UserID:         "user_demo",
+			UserID:         auth.CurrentUserID(c),
 			Name:           req.Name,
 			CategoryLevel1: req.CategoryLevel1,
 			CategoryLevel2: req.CategoryLevel2,
@@ -143,7 +145,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			return
 		}
 		var row models.Item
-		if db.First(&row, "id = ?", c.Param("itemId")).Error != nil {
+		if db.First(&row, "id = ? AND user_id = ?", c.Param("itemId"), auth.CurrentUserID(c)).Error != nil {
 			httpapi.Error(c, 404, "ITEM_NOT_FOUND", "未找到对应单品")
 			return
 		}
@@ -181,7 +183,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		}
 
 		var item models.Item
-		if err := db.First(&item, "id = ?", c.Param("itemId")).Error; err != nil {
+		if err := db.First(&item, "id = ? AND user_id = ?", c.Param("itemId"), auth.CurrentUserID(c)).Error; err != nil {
 			httpapi.Error(c, http.StatusNotFound, "ITEM_NOT_FOUND", "未找到对应单品")
 			return
 		}
@@ -200,7 +202,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 
 	router.DELETE("/items/:itemId", func(c *gin.Context) {
 		var row models.Item
-		if db.First(&row, "id = ?", c.Param("itemId")).Error != nil {
+		if db.First(&row, "id = ? AND user_id = ?", c.Param("itemId"), auth.CurrentUserID(c)).Error != nil {
 			httpapi.Error(c, 404, "ITEM_NOT_FOUND", "未找到对应单品")
 			return
 		}

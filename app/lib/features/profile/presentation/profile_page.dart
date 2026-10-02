@@ -1,7 +1,12 @@
 import "package:flutter/material.dart";
 
+import "../../../core/network/auth_session.dart";
+import "../../../core/network/api_client.dart";
+import "../../../core/network/app_config.dart";
+
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({super.key, required this.onLogout});
+  final VoidCallback onLogout;
   @override
   Widget build(BuildContext context) => Scaffold(
           body: ListView(
@@ -76,7 +81,16 @@ class ProfilePage extends StatelessWidget {
             ]),
             const SizedBox(height: 28),
             OutlinedButton(
-                onPressed: () => _message(context, "已退出登录"),
+                onPressed: () async {
+                  try {
+                    await ApiClient(baseUrl: AppConfig.apiBaseUrl)
+                        .post("/auth/logout");
+                  } catch (_) {
+                    // Local logout must still work if the API is unavailable.
+                  }
+                  await AuthSession.clear();
+                  onLogout();
+                },
                 style: _buttonStyle(
                     const Color(0xFF4F4B46), const Color(0xFFD9D3CB)),
                 child: const Text("退出登录")),

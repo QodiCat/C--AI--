@@ -10,6 +10,7 @@ import (
 
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/models"
+	"ai-closet-server/internal/modules/auth"
 )
 
 type createWearLogRequest struct {
@@ -27,7 +28,7 @@ type createWearLogRequest struct {
 func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	router.GET("/wear-logs", func(c *gin.Context) {
 		var logs []models.WearLog
-		query := db.Order("wear_date desc, created_at desc")
+		query := db.Where("user_id = ?", auth.CurrentUserID(c)).Order("wear_date desc, created_at desc")
 		if c.Query("date") != "" {
 			query = query.Where("wear_date = ?", c.Query("date"))
 		}
@@ -49,9 +50,14 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			return
 		}
 
+		var outfit models.Outfit
+		if db.First(&outfit, "id = ? AND user_id = ?", req.OutfitID, auth.CurrentUserID(c)).Error != nil {
+			httpapi.Error(c, http.StatusBadRequest, "INVALID_OUTFIT", "搭配不存在")
+			return
+		}
 		log := models.WearLog{
 			ID:          fmt.Sprintf("wearlog_%d", time.Now().UnixNano()),
-			UserID:      "user_demo",
+			UserID:      auth.CurrentUserID(c),
 			OutfitID:    req.OutfitID,
 			WearDate:    req.WearDate,
 			Weather:     req.Weather,
@@ -77,7 +83,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			return
 		}
 		var row models.WearLog
-		if db.First(&row, "id = ?", c.Param("logId")).Error != nil {
+		if db.First(&row, "id = ? AND user_id = ?", c.Param("logId"), auth.CurrentUserID(c)).Error != nil {
 			httpapi.Error(c, 404, "WEAR_LOG_NOT_FOUND", "未找到穿搭记录")
 			return
 		}
@@ -94,7 +100,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		httpapi.OK(c, row)
 	})
 	router.DELETE("/wear-logs/:logId", func(c *gin.Context) {
-		result := db.Delete(&models.WearLog{}, "id = ?", c.Param("logId"))
+		result := db.Delete(&models.WearLog{}, "id = ? AND user_id = ?", c.Param("logId"), auth.CurrentUserID(c))
 		if result.RowsAffected == 0 {
 			httpapi.Error(c, 404, "WEAR_LOG_NOT_FOUND", "未找到穿搭记录")
 			return

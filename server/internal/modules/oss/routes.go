@@ -3,12 +3,14 @@ package oss
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
 
 	"ai-closet-server/internal/config"
 	"ai-closet-server/internal/httpapi"
+	"ai-closet-server/internal/modules/auth"
 )
 
 type signatureRequest struct {
@@ -29,8 +31,13 @@ func RegisterRoutes(router *gin.Engine, cfg config.Config) {
 			httpapi.Error(c, http.StatusNotImplemented, "OSS_NOT_CONFIGURED", "阿里云 OSS 尚未配置真实 Bucket 与 Region")
 			return
 		}
+		allowedDirectory := map[string]bool{"originals": true, "cutouts": true, "wear-logs": true, "avatars": true}
+		if !allowedDirectory[req.Directory] || filepath.Base(req.FileName) != req.FileName {
+			httpapi.Error(c, http.StatusBadRequest, "INVALID_UPLOAD_PATH", "上传目录或文件名不合法")
+			return
+		}
 
-		objectKey := fmt.Sprintf("users/user_demo/%s/%d_%s", req.Directory, time.Now().Unix(), req.FileName)
+		objectKey := fmt.Sprintf("users/%s/%s/%d_%s", auth.CurrentUserID(c), req.Directory, time.Now().Unix(), req.FileName)
 		uploadURL := fmt.Sprintf("https://%s.%s.aliyuncs.com", cfg.AliyunOSSBucket, cfg.AliyunOSSRegion)
 
 		httpapi.OK(c, gin.H{
