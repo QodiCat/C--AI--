@@ -30,6 +30,26 @@ MVP 业务闭环已实现：
 
 本地数据库默认路径：`server/data/ai_closet.db`
 
+## SMTP 邮件配置
+
+后端启动时读取 `server/.env`（不存在时读取根目录 `.env`），已导出的环境变量优先。
+设置 `SMTP_SERVER`、`SMTP_PORT=465`、`SMTP_USERNAME`、`SMTP_PASSWORD` 和 `FROM_EMAIL`。
+Docker Compose 通过根目录 `.env` 注入同名变量。真实凭据只保存在被 Git 忽略的本地环境文件中。
+
+在 `server/` 目录验证 TLS 连接和 SMTP 登录：
+
+```bash
+go run ./cmd/mailcheck
+```
+
+向指定收件人发送测试邮件：
+
+```bash
+go run ./cmd/mailcheck -to recipient@example.com
+```
+
+邮件发送模块使用隐式 TLS、证书验证和连接超时。当前注册登录仍采用邮箱密码；验证码注册和密码找回尚未接入邮件发送。
+
 ## 前端运行
 
 1. 进入 `app/`

@@ -6,6 +6,11 @@ import (
 )
 
 type Config struct {
+	SMTPServer               string
+	SMTPPort                 int
+	SMTPUsername             string
+	SMTPPassword             string
+	FromEmail                string
 	AppEnv                   string
 	Port                     int
 	CORSOrigin               string
@@ -21,6 +26,11 @@ type Config struct {
 
 func Read() Config {
 	return Config{
+		SMTPServer:               getEnv("SMTP_SERVER", ""),
+		SMTPPort:                 getEnvInt("SMTP_PORT", 465),
+		SMTPUsername:             getEnv("SMTP_USERNAME", ""),
+		SMTPPassword:             getEnv("SMTP_PASSWORD", ""),
+		FromEmail:                getEnv("FROM_EMAIL", ""),
 		AppEnv:                   getEnv("APP_ENV", "development"),
 		Port:                     getEnvInt("PORT", 3000),
 		CORSOrigin:               getEnv("CORS_ORIGIN", "http://localhost:8080"),

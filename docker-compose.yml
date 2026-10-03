@@ -7,6 +7,11 @@ services:
       PORT: 3000
       DB_PATH: /app/data/ai_closet.db
       CORS_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost}
+      SMTP_SERVER: ${SMTP_SERVER:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      FROM_EMAIL: ${FROM_EMAIL:-}
       AI_PROVIDER: ${AI_PROVIDER:-mock}
       AI_API_BASE_URL: ${AI_API_BASE_URL:-}
       AI_API_KEY: ${AI_API_KEY:-}
