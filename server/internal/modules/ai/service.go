@@ -170,3 +170,9 @@ func (service *Service) failTask(task *models.AITask, failure error) {
 	task.UpdatedAt = time.Now()
 	_ = service.db.Save(task).Error
 }
+
+func (service *Service) RecordFeedback(userID, name, feedback string) error {
+	payload, _ := json.Marshal(map[string]string{"candidateName": name, "feedback": feedback})
+	now := time.Now()
+	return service.db.Create(&models.AITask{ID: fmt.Sprintf("feedback_%d", now.UnixNano()), UserID: userID, TaskType: "outfit_feedback", Status: "success", RequestPayload: string(payload), ResultPayload: string(payload), CreatedAt: now, UpdatedAt: now}).Error
+}

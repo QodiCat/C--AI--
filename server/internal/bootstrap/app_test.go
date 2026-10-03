@@ -6,10 +6,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"regexp"
 	"testing"
 )
 
 func TestCoreMVPFlow(t *testing.T) {
+	t.Setenv("AI_PROVIDER", "mock")
+	t.Setenv("SEED_DEMO_DATA", "true")
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("PGHOST", "")
 	t.Setenv("DB_PATH", filepath.Join(t.TempDir(), "test.db"))
 	app, err := NewApp()
 	if err != nil {
@@ -39,9 +45,19 @@ func TestCoreMVPFlow(t *testing.T) {
 	}
 }
 
+type testMailer struct{ body string }
+
+func (m *testMailer) Send(to, subject, body string) error { m.body = body; return nil }
+
 func TestRegistrationAndAuthentication(t *testing.T) {
+	t.Setenv("AI_PROVIDER", "mock")
+	t.Setenv("SEED_DEMO_DATA", "true")
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("PGHOST", "")
 	t.Setenv("DB_PATH", filepath.Join(t.TempDir(), "auth.db"))
-	app, err := NewApp()
+	sender := &testMailer{}
+	app, err := newApp(sender)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,8 +67,14 @@ func TestRegistrationAndAuthentication(t *testing.T) {
 		t.Fatalf("expected 401 without token, got %d", unauthorized.Code)
 	}
 
+	missing := request(t, app, http.MethodPost, "/auth/register", map[string]any{"email": "new@example.com", "password": "strongpass"}, "")
+	if missing.Code != 400 {
+		t.Fatal("registration without code must fail")
+	}
+	call(t, app, http.MethodPost, "/auth/register/code", map[string]any{"email": "new@example.com"}, "")
+	code := regexp.MustCompile(`[0-9]{6}`).FindString(sender.body)
 	registered := call(t, app, http.MethodPost, "/auth/register", map[string]any{
-		"email": "new@example.com", "password": "strongpass", "nickname": "New User",
+		"email": "new@example.com", "password": "strongpass", "nickname": "New User", "code": code,
 	}, "")
 	token := registered["data"].(map[string]any)["accessToken"].(string)
 	items := call(t, app, http.MethodGet, "/items", nil, token)
@@ -95,4 +117,20 @@ func request(t *testing.T, app *App, method, path string, body any, token string
 	res := httptest.NewRecorder()
 	app.engine.ServeHTTP(res, req)
 	return res
+}
+
+func TestEmptyDatabaseHasNoDemoAccount(t *testing.T) {
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("PGHOST", "")
+	t.Setenv("DB_PATH", filepath.Join(t.TempDir(), "empty.db"))
+	t.Setenv("SEED_DEMO_DATA", "false")
+	app, err := newApp(&testMailer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	response := request(t, app, http.MethodPost, "/auth/login", map[string]any{"email": "demo@example.com", "password": "demo12345"}, "")
+	if response.Code == http.StatusOK {
+		t.Fatal("unexpected demo account in an empty database")
+	}
 }

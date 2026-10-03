@@ -1,292 +1,206 @@
 import "package:flutter/material.dart";
+import "../../../core/network/api_client.dart";
+import "../../../core/network/app_config.dart";
 
-class WearHistoryPage extends StatelessWidget {
+class WearHistoryPage extends StatefulWidget {
   const WearHistoryPage({super.key});
   @override
+  State<WearHistoryPage> createState() => _WearHistoryPageState();
+}
+
+class _WearHistoryPageState extends State<WearHistoryPage> {
+  final client = ApiClient(baseUrl: AppConfig.apiBaseUrl);
+  DateTime month = DateTime(DateTime.now().year, DateTime.now().month);
+  List<dynamic> logs = [], outfits = [];
+  bool loading = true;
+  String? error;
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
+    try {
+      final period = "${month.year}-${month.month.toString().padLeft(2, '0')}";
+      final values = await Future.wait(
+          [client.get("/wear-logs?month=$period"), client.get("/outfits")]);
+      if (mounted) {
+        setState(() {
+          logs = values[0]["data"] as List;
+          outfits = values[1]["data"] as List;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  String outfitName(String id) {
+    final matches = outfits.where((o) => o["id"] == id);
+    return matches.isEmpty ? "已删除搭配" : matches.first["name"] as String;
+  }
+
+  Future<void> record() async {
+    if (outfits.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("请先在 AI 搭配中保存一套搭配")));
+      return;
+    }
+    String selected = outfits.first["id"] as String;
+    final note = TextEditingController();
+    final weather = TextEditingController();
+    final temperature = TextEditingController();
+    String? saveError;
+    bool saving = false;
+    await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+            builder: (dialogContext, update) => AlertDialog(
+                  title: const Text("记录今日穿搭"),
+                  content: SingleChildScrollView(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    DropdownButtonFormField<String>(
+                        initialValue: selected,
+                        items: outfits
+                            .map((o) => DropdownMenuItem(
+                                value: o["id"] as String,
+                                child: Text(o["name"] as String)))
+                            .toList(),
+                        onChanged: (v) => selected = v!),
+                    TextField(
+                        controller: weather,
+                        decoration: const InputDecoration(labelText: "天气")),
+                    TextField(
+                        controller: temperature,
+                        decoration: const InputDecoration(labelText: "温度 °C")),
+                    TextField(
+                        controller: note,
+                        decoration: const InputDecoration(labelText: "备注")),
+                    if (saveError != null) Text(saveError!),
+                  ])),
+                  actions: [
+                    TextButton(
+                        onPressed:
+                            saving ? null : () => Navigator.pop(dialogContext),
+                        child: const Text("取消")),
+                    FilledButton(
+                        onPressed: saving
+                            ? null
+                            : () async {
+                                if (weather.text.trim().isEmpty ||
+                                    temperature.text.trim().isEmpty) {
+                                  update(() => saveError = "请填写天气和温度");
+                                  return;
+                                }
+                                update(() {
+                                  saving = true;
+                                  saveError = null;
+                                });
+                                try {
+                                  final now = DateTime.now();
+                                  await client.post("/wear-logs", body: {
+                                    "outfitId": selected,
+                                    "wearDate":
+                                        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}",
+                                    "weather": weather.text.trim(),
+                                    "temperature": temperature.text.trim(),
+                                    "scene": "日常",
+                                    "note": note.text.trim()
+                                  });
+                                  if (dialogContext.mounted) {
+                                    Navigator.pop(dialogContext);
+                                  }
+                                } catch (e) {
+                                  if (dialogContext.mounted) {
+                                    update(() {
+                                      saving = false;
+                                      saveError = e.toString();
+                                    });
+                                  }
+                                }
+                              },
+                        child: Text(saving ? "保存中…" : "保存"))
+                  ],
+                )));
+    note.dispose();
+    weather.dispose();
+    temperature.dispose();
+    if (mounted) await load();
+  }
+
+  @override
   Widget build(BuildContext context) => Scaffold(
-          body: ListView(
+      body: RefreshIndicator(
+          onRefresh: load,
+          child: ListView(
               key: const ValueKey("wear-history-page"),
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+              padding: const EdgeInsets.all(20),
               children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text("穿搭记录", style: Theme.of(context).textTheme.headlineMedium),
-              IconButton.filledTonal(
-                  onPressed: () => _record(context),
-                  icon: const Icon(Icons.add))
-            ]),
-            const SizedBox(height: 5),
-            const Text("记录每一天的穿搭，留下美好回忆",
-                style: TextStyle(color: Color(0xFF8C8881))),
-            const SizedBox(height: 22),
-            Row(children: [
-              IconButton(
-                  onPressed: () {}, icon: const Icon(Icons.chevron_left)),
-              const Expanded(
-                  child: Text("2024年 5月",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.w700))),
-              IconButton(
-                  onPressed: () {}, icon: const Icon(Icons.chevron_right))
-            ]),
-            const SizedBox(height: 18),
-            _WearCard(
-                date: "20",
-                weekday: "周一",
-                weather: "晴 · 22°C",
-                mood: "😊 不错",
-                rating: 4,
-                color: const Color(0xFFE9DED0),
-                onTap: () => _detail(context)),
-            const SizedBox(height: 14),
-            _WearCard(
-                date: "18",
-                weekday: "周六",
-                weather: "多云 · 20°C",
-                mood: "😄 开心",
-                rating: 5,
-                color: const Color(0xFFDDE2D4),
-                onTap: () => _detail(context)),
-            const SizedBox(height: 14),
-            _WearCard(
-                date: "16",
-                weekday: "周四",
-                weather: "晴 · 24°C",
-                mood: "😌 平静",
-                rating: 4,
-                color: const Color(0xFFE7E1D8),
-                onTap: () => _detail(context)),
-          ]));
-  void _record(BuildContext c) => showModalBottomSheet(
-      context: c,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
-      builder: (_) => const _RecordSheet());
-  void _detail(BuildContext c) => Navigator.push(
-      c, MaterialPageRoute(builder: (_) => const WearDetailPage()));
-}
-
-class _WearCard extends StatelessWidget {
-  final String date, weekday, weather, mood;
-  final int rating;
-  final Color color;
-  final VoidCallback onTap;
-  const _WearCard(
-      {required this.date,
-      required this.weekday,
-      required this.weather,
-      required this.mood,
-      required this.rating,
-      required this.color,
-      required this.onTap});
-  @override
-  Widget build(BuildContext context) => InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFECE7DF))),
-          child: Row(children: [
-            SizedBox(
-                width: 42,
-                child: Column(children: [
-                  Text(date,
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.w800)),
-                  Text(weekday,
-                      style: const TextStyle(
-                          fontSize: 12, color: Color(0xFF8A857E)))
-                ])),
-            const SizedBox(width: 10),
-            Container(
-                width: 90,
-                height: 94,
-                decoration: BoxDecoration(
-                    color: color, borderRadius: BorderRadius.circular(14)),
-                child: const Icon(Icons.checkroom,
-                    size: 52, color: Color(0xFFB59A7B))),
-            const SizedBox(width: 14),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text(weather,
-                      style: const TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 9),
-                  Text(mood),
-                  const SizedBox(height: 9),
-                  Row(
-                      children: List.generate(
-                          5,
-                          (i) => Icon(
-                              i < rating
-                                  ? Icons.star_rounded
-                                  : Icons.star_outline_rounded,
-                              size: 18,
-                              color: const Color(0xFFE1B453))))
-                ])),
-            const Icon(Icons.chevron_right, color: Color(0xFFAAA59E)),
-          ])));
-}
-
-class WearDetailPage extends StatelessWidget {
-  const WearDetailPage({super.key});
-  @override
-  Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(
-          title: const Text("5月20日 · 穿搭详情"),
-          backgroundColor: const Color(0xFFFAF8F4),
-          elevation: 0,
-          actions: [
-            IconButton(onPressed: () {}, icon: const Icon(Icons.more_horiz))
-          ]),
-      body: ListView(padding: const EdgeInsets.all(20), children: [
-        Container(
-            height: 260,
-            decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [Color(0xFFD9CCBC), Color(0xFFF0E8DD)]),
-                borderRadius: BorderRadius.circular(20)),
-            child: const Icon(Icons.checkroom,
-                size: 150, color: Color(0xFFA88C6C))),
-        const SizedBox(height: 18),
-        const Text("今天的穿搭",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        Row(
-            children: [
-          Icons.checkroom,
-          Icons.dry_cleaning,
-          Icons.straighten,
-          Icons.shopping_bag_outlined,
-          Icons.directions_walk
-        ]
-                .map((i) => Expanded(
-                    child: Container(
-                        height: 62,
-                        margin: const EdgeInsets.only(right: 7),
-                        decoration: BoxDecoration(
-                            color: const Color(0xFFF1ECE4),
-                            borderRadius: BorderRadius.circular(12)),
-                        child: Icon(i, color: const Color(0xFFB39878)))))
-                .toList()),
-        const SizedBox(height: 22),
-        const _DetailLine(label: "心情", value: "😊 不错"),
-        const _DetailLine(label: "评分", value: "★★★★☆", gold: true),
-        const SizedBox(height: 10),
-        const Text("备注", style: TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        const Text("开会一整天，穿着很舒适，配色也很温柔，得到同事夸奖～",
-            style: TextStyle(color: Color(0xFF69645E), height: 1.6)),
-      ]));
-}
-
-class _DetailLine extends StatelessWidget {
-  final String label, value;
-  final bool gold;
-  const _DetailLine(
-      {required this.label, required this.value, this.gold = false});
-  @override
-  Widget build(BuildContext context) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
-        Text(value,
-            style: TextStyle(
-                color: gold ? const Color(0xFFE1B453) : const Color(0xFF57534E),
-                fontSize: gold ? 20 : 14))
-      ]));
-}
-
-class _RecordSheet extends StatefulWidget {
-  const _RecordSheet();
-  @override
-  State<_RecordSheet> createState() => _RecordSheetState();
-}
-
-class _RecordSheetState extends State<_RecordSheet> {
-  int mood = 2, rating = 4;
-  @override
-  Widget build(BuildContext context) => Padding(
-      padding: EdgeInsets.fromLTRB(
-          20, 18, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
-      child: SingleChildScrollView(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Center(
-            child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                    color: const Color(0xFFD8D3CB),
-                    borderRadius: BorderRadius.circular(2)))),
-        const SizedBox(height: 18),
-        const Text("记录这套穿搭",
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 16),
-        Container(
-            height: 92,
-            decoration: BoxDecoration(
-                color: const Color(0xFFF3EEE7),
-                borderRadius: BorderRadius.circular(16)),
-            child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Icons.checkroom,
-                  Icons.dry_cleaning,
-                  Icons.straighten,
-                  Icons.shopping_bag_outlined,
-                  Icons.directions_walk
-                ]
-                    .map((i) =>
-                        Icon(i, color: const Color(0xFFB19778), size: 34))
-                    .toList())),
-        const SizedBox(height: 18),
-        const Text("今天心情", style: TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 10),
-        Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: ["😞", "😐", "😊", "😄"]
-                .asMap()
-                .entries
-                .map((e) => ChoiceChip(
-                    label: Text(e.value, style: const TextStyle(fontSize: 20)),
-                    selected: mood == e.key,
-                    onSelected: (_) => setState(() => mood = e.key)))
-                .toList()),
-        const SizedBox(height: 18),
-        const Text("穿搭评分", style: TextStyle(fontWeight: FontWeight.w700)),
-        Row(
-            children: List.generate(
-                5,
-                (i) => IconButton(
-                    onPressed: () => setState(() => rating = i + 1),
-                    icon: Icon(
-                        i < rating
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
-                        color: const Color(0xFFE1B453),
-                        size: 32)))),
-        const TextField(
-            maxLength: 100,
-            maxLines: 2,
-            decoration: InputDecoration(
-                hintText: "记录一下今天的穿搭感受吧…",
-                filled: true,
-                fillColor: Color(0xFFF8F6F2),
-                border: OutlineInputBorder(borderSide: BorderSide.none))),
-        const SizedBox(height: 12),
-        FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text("穿搭记录已保存")));
-            },
-            child: const Text("保存穿搭记录")),
-      ])));
+                Row(children: [
+                  Expanded(
+                      child: Text("穿搭记录",
+                          style: Theme.of(context).textTheme.headlineMedium)),
+                  IconButton(
+                      onPressed: loading ? null : record,
+                      icon: const Icon(Icons.add))
+                ]),
+                Row(children: [
+                  IconButton(
+                      onPressed: loading
+                          ? null
+                          : () {
+                              month = DateTime(month.year, month.month - 1);
+                              load();
+                            },
+                      icon: const Icon(Icons.chevron_left)),
+                  Expanded(
+                      child: Text("${month.year}年 ${month.month}月",
+                          textAlign: TextAlign.center)),
+                  IconButton(
+                      onPressed: loading
+                          ? null
+                          : () {
+                              month = DateTime(month.year, month.month + 1);
+                              load();
+                            },
+                      icon: const Icon(Icons.chevron_right))
+                ]),
+                if (loading) const Center(child: CircularProgressIndicator()),
+                if (error != null)
+                  TextButton(onPressed: load, child: Text(error!)),
+                if (!loading && error == null && logs.isEmpty)
+                  const Padding(
+                      padding: EdgeInsets.all(24), child: Text("本月还没有穿搭记录")),
+                ...logs.map((raw) {
+                  final log = raw as Map<String, dynamic>;
+                  return Card(
+                      child: ListTile(
+                    title: Text(
+                        "${log['wearDate']} · ${outfitName(log['outfitId'] as String)}"),
+                    subtitle: Text(
+                        "${log['weather']} ${log['temperature']}°C\n${log['note'] ?? ''}"),
+                    isThreeLine: true,
+                    onTap: () => showDialog<void>(
+                        context: context,
+                        builder: (_) =>
+                            AlertDialog(
+                                title:
+                                    Text(outfitName(log['outfitId'] as String)),
+                                content: Text(
+                                    "日期：${log['wearDate']}\n场景：${log['scene']}\n心情：${log['mood']}\n评分：${log['rating']}\n备注：${log['note']}"),
+                                actions: [
+                                  TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text("关闭"))
+                                ])),
+                  ));
+                }),
+              ])));
 }

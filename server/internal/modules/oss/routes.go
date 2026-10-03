@@ -27,6 +27,7 @@ type signatureRequest struct {
 }
 
 func RegisterRoutes(router *gin.Engine, cfg config.Config) {
+	registerImageUpload(router, cfg)
 	router.POST("/uploads/oss-signature", func(c *gin.Context) {
 		var req signatureRequest
 		if err := c.ShouldBindJSON(&req); err != nil {

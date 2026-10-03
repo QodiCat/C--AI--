@@ -2,7 +2,9 @@ package bootstrap
 
 import (
 	"fmt"
+	"gorm.io/gorm"
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -10,6 +12,7 @@ import (
 	"ai-closet-server/internal/config"
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/infrastructure/database"
+	"ai-closet-server/internal/infrastructure/mailer"
 	"ai-closet-server/internal/modules/ai"
 	"ai-closet-server/internal/modules/auth"
 	"ai-closet-server/internal/modules/imageprocess"
@@ -26,14 +29,25 @@ type App struct {
 	port   int
 }
 
-func NewApp() (*App, error) {
+func NewApp() (*App, error) { return newApp(mailer.New(config.Read())) }
+
+func newApp(sender auth.MailSender) (*App, error) {
 	cfg := config.Read()
 
 	if err := os.MkdirAll("data", 0o755); err != nil {
 		return nil, fmt.Errorf("create data dir: %w", err)
 	}
 
-	db, err := database.Open(cfg.DBPath)
+	var db *gorm.DB
+	var err error
+	if cfg.DatabaseURL != "" {
+		db, err = database.OpenPostgres(cfg.DatabaseURL)
+	} else {
+		if cfg.AppEnv != "test" {
+			return nil, fmt.Errorf("DATABASE_URL is required; SQLite is reserved for tests")
+		}
+		db, err = database.Open(cfg.DBPath)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -42,13 +56,18 @@ func NewApp() (*App, error) {
 		return nil, err
 	}
 
-	if err := database.SeedDemoData(db); err != nil {
-		return nil, err
+	if cfg.SeedDemo {
+		if cfg.AppEnv == "production" {
+			return nil, fmt.Errorf("demo data is forbidden in production")
+		}
+		if err := database.SeedDemoData(db); err != nil {
+			return nil, err
+		}
 	}
 
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{cfg.CORSOrigin},
+		AllowOrigins:     strings.Split(cfg.CORSOrigin, ","),
 		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
@@ -57,17 +76,19 @@ func NewApp() (*App, error) {
 	router.GET("/health", func(c *gin.Context) {
 		httpapi.OK(c, gin.H{
 			"status": "ok",
-			"date":   "2026-08-24",
 		})
 	})
 
+	if cfg.AppEnv == "production" && cfg.AIProvider == "mock" {
+		return nil, fmt.Errorf("mock AI is forbidden in production")
+	}
 	aiProvider := ai.NewProvider(cfg)
 	aiService := ai.NewService(db, aiProvider)
 
-	auth.RegisterRoutes(router, db)
+	auth.RegisterRoutes(router, db, auth.NewVerifier(sender))
 	router.Use(auth.RequireAuth(db))
 	item.RegisterRoutes(router, db)
-	imageprocess.RegisterRoutes(router, db)
+	imageprocess.RegisterRoutes(router, db, imageprocess.NewProcessor(cfg), cfg)
 	outfit.RegisterRoutes(router, db)
 	profile.RegisterRoutes(router, db)
 	recommendation.RegisterRoutes(router, aiService)

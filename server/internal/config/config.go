@@ -1,11 +1,20 @@
 package config
 
 import (
+	"net"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type Config struct {
+	DashScopeAPIKey          string
+	QwenBaseURL              string
+	QwenVisionModel          string
+	QwenTextModel            string
+	AliyunAccessKeyID        string
+	AliyunAccessKeySecret    string
 	SMTPServer               string
 	SMTPPort                 int
 	SMTPUsername             string
@@ -14,6 +23,8 @@ type Config struct {
 	AppEnv                   string
 	Port                     int
 	CORSOrigin               string
+	DatabaseURL              string
+	SeedDemo                 bool
 	DBPath                   string
 	AIProvider               string
 	AIAPIBaseURL             string
@@ -26,6 +37,12 @@ type Config struct {
 
 func Read() Config {
 	return Config{
+		DashScopeAPIKey:          getEnv("DASHSCOPE_API_KEY", ""),
+		QwenBaseURL:              getEnv("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
+		QwenVisionModel:          getEnv("QWEN_VISION_MODEL", "qwen3-vl-plus"),
+		QwenTextModel:            getEnv("QWEN_TEXT_MODEL", "qwen-plus"),
+		AliyunAccessKeyID:        getEnv("ALIYUN_ACCESS_KEY_ID", ""),
+		AliyunAccessKeySecret:    getEnv("ALIYUN_ACCESS_KEY_SECRET", ""),
 		SMTPServer:               getEnv("SMTP_SERVER", ""),
 		SMTPPort:                 getEnvInt("SMTP_PORT", 465),
 		SMTPUsername:             getEnv("SMTP_USERNAME", ""),
@@ -34,14 +51,16 @@ func Read() Config {
 		AppEnv:                   getEnv("APP_ENV", "development"),
 		Port:                     getEnvInt("PORT", 3000),
 		CORSOrigin:               getEnv("CORS_ORIGIN", "http://localhost:8080"),
+		DatabaseURL:              databaseURL(),
+		SeedDemo:                 getEnv("SEED_DEMO_DATA", "false") == "true",
 		DBPath:                   getEnv("DB_PATH", "./data/ai_closet.db"),
-		AIProvider:               getEnv("AI_PROVIDER", "mock"),
+		AIProvider:               getEnv("AI_PROVIDER", "qwen"),
 		AIAPIBaseURL:             getEnv("AI_API_BASE_URL", ""),
 		AIAPIKey:                 getEnv("AI_API_KEY", ""),
-		AliyunOSSRegion:          getEnv("ALIYUN_OSS_REGION", ""),
-		AliyunOSSBucket:          getEnv("ALIYUN_OSS_BUCKET", ""),
-		AliyunOSSAccessKeyID:     getEnv("ALIYUN_OSS_ACCESS_KEY_ID", ""),
-		AliyunOSSAccessKeySecret: getEnv("ALIYUN_OSS_ACCESS_KEY_SECRET", ""),
+		AliyunOSSRegion:          ossRegion(getEnv("ALIYUN_OSS_REGION", "")),
+		AliyunOSSBucket:          getEnv("ALIYUN_OSS_BUCKET", getEnv("ALIYUN_OSS_BUCKET_NAME", "")),
+		AliyunOSSAccessKeyID:     getEnv("ALIYUN_OSS_ACCESS_KEY_ID", getEnv("ALIYUN_ACCESS_KEY_ID", "")),
+		AliyunOSSAccessKeySecret: getEnv("ALIYUN_OSS_ACCESS_KEY_SECRET", getEnv("ALIYUN_ACCESS_KEY_SECRET", "")),
 	}
 }
 
@@ -65,4 +84,26 @@ func getEnvInt(key string, fallback int) int {
 	}
 
 	return parsed
+}
+
+func databaseURL() string {
+	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
+		return dsn
+	}
+	host := os.Getenv("PGHOST")
+	if host == "" {
+		return ""
+	}
+	connection := url.URL{Scheme: "postgresql", Host: net.JoinHostPort(host, getEnv("PGPORT", "5432")), User: url.UserPassword(getEnv("PGUSER", "ai_closet"), os.Getenv("PGPASSWORD")), Path: "/" + getEnv("PGDATABASE", "ai_closet")}
+	params := connection.Query()
+	params.Set("sslmode", getEnv("PGSSLMODE", "require"))
+	connection.RawQuery = params.Encode()
+	return connection.String()
+}
+
+func ossRegion(region string) string {
+	if region != "" && !strings.HasPrefix(region, "oss-") {
+		return "oss-" + region
+	}
+	return region
 }

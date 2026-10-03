@@ -37,6 +37,30 @@ class _State extends State<AiStylistPage> {
     }
   }
 
+  @override
+  void dispose() {
+    temperature.dispose();
+    super.dispose();
+  }
+
+  Future<void> save(Map<String, dynamic> candidate) async {
+    try {
+      await repo.save(candidate);
+      if (mounted) toast("已保存到搭配");
+    } catch (e) {
+      if (mounted) toast(e.toString());
+    }
+  }
+
+  Future<void> like(String name) async {
+    try {
+      await repo.feedback(name, "like");
+      if (mounted) toast("已记录喜欢");
+    } catch (e) {
+      if (mounted) toast(e.toString());
+    }
+  }
+
   void toast(String v) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(v)));
   Widget select(String label, String value, List<String> values,
@@ -108,17 +132,11 @@ class _State extends State<AiStylistPage> {
                               Text("${(c["itemIds"] as List).length} 件衣橱单品"),
                               Wrap(children: [
                                 TextButton.icon(
-                                    onPressed: () async {
-                                      await repo.save(c);
-                                      toast("已保存到搭配");
-                                    },
+                                    onPressed: () => save(c),
                                     icon: const Icon(Icons.bookmark_outline),
                                     label: const Text("保存")),
                                 TextButton.icon(
-                                    onPressed: () async {
-                                      await repo.feedback(c["name"], "like");
-                                      toast("已记录喜欢");
-                                    },
+                                    onPressed: () => like(c["name"] as String),
                                     icon: const Icon(Icons.thumb_up_outlined),
                                     label: const Text("喜欢")),
                                 TextButton(

@@ -3,6 +3,7 @@ package auth
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -22,9 +23,38 @@ type credentialsRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8,max=72"`
 	Nickname string `json:"nickname"`
+	Code     string `json:"code"`
 }
 
-func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
+func RegisterRoutes(router *gin.Engine, db *gorm.DB, verifier *Verifier) {
+	router.POST("/auth/register/code", func(c *gin.Context) {
+		var req struct {
+			Email string `json:"email" binding:"required,email,max=254"`
+		}
+		if c.ShouldBindJSON(&req) != nil {
+			httpapi.Error(c, 400, "INVALID_REQUEST", "请输入有效邮箱")
+			return
+		}
+		email := strings.ToLower(strings.TrimSpace(req.Email))
+		var count int64
+		if err := db.Model(&models.User{}).Where("email = ?", email).Count(&count).Error; err != nil {
+			httpapi.Error(c, 500, "SEND_FAILED", "暂时无法发送验证码")
+			return
+		}
+		if count > 0 {
+			httpapi.Error(c, 409, "EMAIL_EXISTS", "该邮箱已注册")
+			return
+		}
+		if err := verifier.Send(email, c.RemoteIP()); err != nil {
+			if errors.Is(err, ErrRateLimit) {
+				httpapi.Error(c, 429, "RATE_LIMITED", err.Error())
+			} else {
+				httpapi.Error(c, 503, "SEND_FAILED", "验证码发送失败，请稍后重试")
+			}
+			return
+		}
+		httpapi.OK(c, gin.H{"sent": true, "expiresIn": 600, "retryAfter": 60})
+	})
 	router.POST("/auth/register", func(c *gin.Context) {
 		var req credentialsRequest
 		if c.ShouldBindJSON(&req) != nil {
@@ -48,7 +78,11 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			nickname = strings.Split(email, "@")[0]
 		}
 		user := models.User{ID: newSecureID("user"), Email: email, PasswordHash: string(hash), Nickname: nickname, LoginType: "email", StylePreferences: "[]", CreatedAt: now, UpdatedAt: now}
-		if err := db.Create(&user).Error; err != nil {
+		if err := verifier.Register(email, req.Code, func() error { return db.Create(&user).Error }); err != nil {
+			if errors.Is(err, ErrCode) {
+				httpapi.Error(c, 400, "INVALID_CODE", err.Error())
+				return
+			}
 			httpapi.Error(c, 500, "REGISTER_FAILED", "注册失败")
 			return
 		}

@@ -96,11 +96,23 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		row.Mood = req.Mood
 		row.Rating = req.Rating
 		row.Note = req.Note
-		db.Save(&row)
+		var outfit models.Outfit
+		if db.First(&outfit, "id = ? AND user_id = ?", req.OutfitID, auth.CurrentUserID(c)).Error != nil {
+			httpapi.Error(c, 400, "INVALID_OUTFIT", "搭配不存在")
+			return
+		}
+		if db.Save(&row).Error != nil {
+			httpapi.Error(c, 500, "WEAR_LOG_UPDATE_FAILED", "保存穿搭记录失败")
+			return
+		}
 		httpapi.OK(c, row)
 	})
 	router.DELETE("/wear-logs/:logId", func(c *gin.Context) {
 		result := db.Delete(&models.WearLog{}, "id = ? AND user_id = ?", c.Param("logId"), auth.CurrentUserID(c))
+		if result.Error != nil {
+			httpapi.Error(c, 500, "WEAR_LOG_DELETE_FAILED", "删除穿搭记录失败")
+			return
+		}
 		if result.RowsAffected == 0 {
 			httpapi.Error(c, 404, "WEAR_LOG_NOT_FOUND", "未找到穿搭记录")
 			return

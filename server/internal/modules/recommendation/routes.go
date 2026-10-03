@@ -127,6 +127,10 @@ func RegisterRoutes(router *gin.Engine, service *ai.Service) {
 			httpapi.Error(c, 400, "INVALID_REQUEST", "反馈参数不合法")
 			return
 		}
+		if err := service.RecordFeedback(auth.CurrentUserID(c), req.CandidateName, req.Feedback); err != nil {
+			httpapi.Error(c, 500, "FEEDBACK_SAVE_FAILED", "反馈保存失败")
+			return
+		}
 		httpapi.OK(c, gin.H{"recorded": true, "feedback": req.Feedback})
 	})
 }

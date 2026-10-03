@@ -1,7 +1,5 @@
 import "dart:typed_data";
 
-import "package:http/http.dart" as http;
-
 import "../../../core/network/api_client.dart";
 
 class WardrobeRepository {
@@ -28,29 +26,43 @@ class WardrobeRepository {
 
   Future<String> uploadImage(
       Uint8List bytes, String fileName, String contentType) async {
-    final response = await _apiClient.post("/uploads/oss-signature", body: {
-      "fileName": fileName,
-      "contentType": contentType,
-      "directory": "originals",
-    });
-    final data = response["data"] as Map<String, dynamic>;
-    final request =
-        http.MultipartRequest("POST", Uri.parse(data["uploadUrl"] as String));
-    request.fields.addAll((data["formData"] as Map<String, dynamic>)
-        .map((key, value) => MapEntry(key, value.toString())));
-    request.files
-        .add(http.MultipartFile.fromBytes("file", bytes, filename: fileName));
-    final uploaded = await request.send();
-    if (uploaded.statusCode < 200 || uploaded.statusCode >= 300) {
-      throw const ApiException("图片上传失败，请重试");
+    if (bytes.length > 10 * 1024 * 1024) {
+      throw const ApiException("图片不能超过10 MB");
     }
-    return data["objectUri"] as String;
+    final response =
+        await _apiClient.upload("/uploads/images", bytes, fileName);
+    return response["data"]["objectUri"] as String;
   }
 
-  Future<void> recognizeImage(String imageUri) async {
-    await _apiClient.post("/ai/item-recognition/tasks", body: {
+  Future<String?> resolveImage(String uri) async {
+    if (uri.isEmpty) return null;
+    if (!uri.startsWith("oss://")) return uri;
+    final response = await _apiClient.get(
+        Uri(path: "/uploads/oss-url", queryParameters: {"objectUri": uri})
+            .toString());
+    return response["data"]["url"] as String;
+  }
+
+  Future<Map<String, dynamic>> recognizeImage(String imageUri) async {
+    final created = await _apiClient.post("/ai/item-recognition/tasks", body: {
       "imageUrls": [imageUri]
     });
+    final id = created["data"]["id"] as String;
+    final deadline = DateTime.now().add(const Duration(minutes: 11));
+    while (DateTime.now().isBefore(deadline)) {
+      await Future<void>.delayed(const Duration(seconds: 2));
+      final response = await _apiClient.get("/ai/tasks/$id");
+      final task = response["data"] as Map<String, dynamic>;
+      if (task["status"] == "failed") {
+        throw ApiException(task["errorMessage"] as String? ?? "图片处理失败");
+      }
+      if (task["status"] == "success") {
+        final candidates = task["result"] as List<dynamic>;
+        if (candidates.isEmpty) throw const ApiException("未识别到衣物或鞋子");
+        return Map<String, dynamic>.from(candidates.first as Map);
+      }
+    }
+    throw const ApiException("识别超时，请稍后重试");
   }
 
   Future<void> updateStatus(

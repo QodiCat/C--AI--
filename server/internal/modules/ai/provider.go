@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"ai-closet-server/internal/config"
+	"ai-closet-server/internal/infrastructure/qwen"
 	"ai-closet-server/internal/models"
 )
 
@@ -42,6 +43,9 @@ type Provider interface {
 }
 
 func NewProvider(cfg config.Config) Provider {
+	if cfg.AIProvider == "qwen" {
+		return QwenProvider{Client: qwen.New(cfg.QwenBaseURL, cfg.DashScopeAPIKey, cfg.QwenTextModel)}
+	}
 	if cfg.AIProvider == "mock" {
 		return MockProvider{}
 	}

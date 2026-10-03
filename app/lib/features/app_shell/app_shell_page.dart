@@ -27,8 +27,7 @@ class _AppShellPageState extends State<AppShellPage> {
       ProfilePage(onLogout: widget.onLogout),
     ];
     return Scaffold(
-      body:
-          SafeArea(child: IndexedStack(index: _currentIndex, children: pages)),
+      body: SafeArea(child: pages[_currentIndex]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (value) {

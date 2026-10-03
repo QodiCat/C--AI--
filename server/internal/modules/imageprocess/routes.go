@@ -1,9 +1,11 @@
 package imageprocess
 
 import (
+	"ai-closet-server/internal/config"
 	"ai-closet-server/internal/httpapi"
 	"ai-closet-server/internal/models"
 	"ai-closet-server/internal/modules/auth"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -16,26 +18,62 @@ type request struct {
 	ImageURLs []string `json:"imageUrls" binding:"required,min=1,max=9"`
 }
 
-func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
+func RegisterRoutes(router *gin.Engine, db *gorm.DB, processor Processor, cfg config.Config) {
+	db.Model(&models.AITask{}).Where("task_type = ? AND status = ?", "item_recognition", "processing").Updates(map[string]any{"status": "failed", "error_message": "服务重启，请重新提交识别", "updated_at": time.Now()})
+	slots := make(chan struct{}, 2)
 	router.POST("/ai/item-recognition/tasks", func(c *gin.Context) {
 		var req request
 		if c.ShouldBindJSON(&req) != nil {
-			httpapi.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "请选择1至9张图片")
+			httpapi.Error(c, 400, "INVALID_REQUEST", "请选择1至9张图片")
+			return
+		}
+		userID := auth.CurrentUserID(c)
+		for _, uri := range req.ImageURLs {
+			if _, err := objectKey(cfg, userID, uri); err != nil {
+				httpapi.Error(c, 400, "INVALID_IMAGE", err.Error())
+				return
+			}
+		}
+		if err := processor.Ready(); err != nil {
+			httpapi.Error(c, http.StatusServiceUnavailable, "IMAGE_SERVICE_NOT_CONFIGURED", err.Error())
+			return
+		}
+		select {
+		case slots <- struct{}{}:
+		default:
+			httpapi.Error(c, 429, "IMAGE_SERVICE_BUSY", "识别任务繁忙，请稍后重试")
 			return
 		}
 		raw, _ := json.Marshal(req)
 		now := time.Now()
-		candidates := make([]map[string]any, 0, len(req.ImageURLs))
-		for i, url := range req.ImageURLs {
-			candidates = append(candidates, map[string]any{"candidateId": fmt.Sprintf("candidate_%d", i+1), "originalImageUrl": url, "cutoutImageUrl": url, "name": fmt.Sprintf("待确认单品 %d", i+1), "categoryLevel1": "上装", "categoryLevel2": "其他上装", "primaryColor": "待确认", "seasons": []string{}, "styles": []string{}, "scenes": []string{}})
-		}
-		result, _ := json.Marshal(candidates)
-		task := models.AITask{ID: fmt.Sprintf("task_%d", now.UnixNano()), UserID: auth.CurrentUserID(c), TaskType: "item_recognition", Status: "success", RequestPayload: string(raw), ResultPayload: string(result), CreatedAt: now, UpdatedAt: now}
+		task := models.AITask{ID: fmt.Sprintf("task_%d", now.UnixNano()), UserID: userID, TaskType: "item_recognition", Status: "processing", RequestPayload: string(raw), ResultPayload: "[]", CreatedAt: now, UpdatedAt: now}
 		if db.Create(&task).Error != nil {
+			<-slots
 			httpapi.Error(c, 500, "TASK_CREATE_FAILED", "创建识别任务失败")
 			return
 		}
-		httpapi.OK(c, task)
+		go func() {
+			defer func() {
+				<-slots
+				if recover() != nil {
+					db.Model(&models.AITask{}).Where("id = ?", task.ID).Updates(map[string]any{"status": "failed", "error_message": "图像处理异常，请重试", "updated_at": time.Now()})
+				}
+			}()
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+			candidates := make([]Candidate, 0, len(req.ImageURLs))
+			for _, uri := range req.ImageURLs {
+				result, err := processor.Process(ctx, userID, task.ID, uri)
+				if err != nil {
+					db.Model(&models.AITask{}).Where("id = ?", task.ID).Updates(map[string]any{"status": "failed", "error_message": err.Error(), "updated_at": time.Now()})
+					return
+				}
+				candidates = append(candidates, result)
+			}
+			payload, _ := json.Marshal(candidates)
+			db.Model(&models.AITask{}).Where("id = ?", task.ID).Updates(map[string]any{"status": "success", "result_payload": string(payload), "updated_at": time.Now()})
+		}()
+		httpapi.OK(c, gin.H{"id": task.ID, "status": task.Status})
 	})
 	router.GET("/ai/tasks/:taskId", func(c *gin.Context) {
 		var task models.AITask
