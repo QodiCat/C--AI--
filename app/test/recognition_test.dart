@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:ai_closet_app/core/network/api_client.dart';
 import 'package:ai_closet_app/features/wardrobe/data/wardrobe_repository.dart';
-import 'package:ai_closet_app/features/wardrobe/presentation/wardrobe_page.dart';
+import 'package:ai_closet_app/features/wardrobe/models/wardrobe_item.dart';
+import 'package:ai_closet_app/features/wardrobe/presentation/recognition_result_page.dart';
 
 void main() {
   testWidgets(
@@ -58,7 +59,8 @@ void main() {
     expect(find.text('白色运动鞋'), findsOneWidget);
     expect(find.text('鞋履'), findsOneWidget);
     expect(find.text('米白色棉质衬衫'), findsNothing);
-    await tester.scrollUntilVisible(find.text('保存并加入衣橱'), 250, scrollable: find.byType(Scrollable).first);
+    await tester.scrollUntilVisible(find.text('保存并加入衣橱'), 250,
+        scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('保存并加入衣橱'));
     await tester.pumpAndSettle();
     expect(saved?['categoryLevel1'], '鞋履');

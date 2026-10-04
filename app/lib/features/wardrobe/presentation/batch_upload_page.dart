@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/app_config.dart';
 import '../data/wardrobe_repository.dart';
-import 'wardrobe_page.dart';
+import '../models/wardrobe_item.dart';
+import 'recognition_result_page.dart';
 
 class BatchPhoto {
   BatchPhoto(this.bytes, this.name, this.contentType);

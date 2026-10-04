@@ -7,7 +7,7 @@
 
 ## 当前实现范围
 
-MVP 业务闭环已实现：
+当前代码已实现的功能如下；完整 PRD 的范围及尚未完成事项见 [产品资料](docs/README.md)：
 
 - 登录、退出、个人资料、风格偏好、隐私授权和账号注销
 - 邮箱密码注册、bcrypt 密码哈希、持久化登录态与多用户数据隔离
@@ -61,17 +61,17 @@ go run ./cmd/mailcheck -to recipient@example.com
 
 当前前端默认请求：`http://localhost:3000`
 
-请使用邮箱验证码注册真实账号。测试夹具仅在自动化测试中使用演示账号。手机浏览器和 Android 本机测试步骤见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+请使用邮箱验证码注册真实账号。测试夹具仅在自动化测试中使用演示账号。手机浏览器和 Android 本机测试步骤见 [DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
 ## 服务器部署
 
-源码部署、HTTPS、数据库和对象存储配置见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+源码部署、HTTPS、数据库和对象存储配置见 [DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
 ## 外部服务接入说明
 
 ### 阿里云 OSS 与抠图
 
-手机相机/相册通过 `POST /uploads/images` 上传，后端验证图片并缩放压缩后存入私有上海 OSS。`POST /ai/item-recognition/tasks` 运行 Qwen-VL 识别与阿里云 `SegmentCommodity` 抠图，`GET /ai/tasks/:id` 查询结果。抠图结果立即转存 OSS；确认页展示真实结果，保存后从数据库读取衣橱。
+手机相机/相册通过 `POST /uploads/images` 上传，后端验证图片并缩放压缩后存入配置地域的私有 OSS。`POST /ai/item-recognition/tasks` 运行 Qwen-VL 识别与阿里云 `SegmentCommodity` 抠图，`GET /ai/tasks/:id` 查询结果。抠图结果立即转存 OSS；确认页展示真实结果，保存后从数据库读取衣橱。
 
 `GET /uploads/oss-url` 生成当前用户对象的临时读取链接。原有 `POST /uploads/oss-signature` 仍可供直传客户端使用。
 
@@ -81,10 +81,12 @@ go run ./cmd/mailcheck -to recipient@example.com
 
 图像提取名称、分类、颜色、图案、品牌、材质、版型、季节、风格、场景和待确认字段；搭配模型只能使用当前用户的可穿单品 ID。服务缺少配置或调用失败时返回真实错误，不回退到模拟内容。
 
-`MockProvider` 仅用于显式启用的开发/自动化测试，生产环境禁止使用。部署和完整配置见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+`MockProvider` 仅用于显式启用的开发/自动化测试，生产环境禁止使用。部署和完整配置见 [DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
 密码接口：`POST /auth/password/reset/code`（email）、`POST /auth/password/reset`（email、code、newPassword）、`POST /auth/password/change`（currentPassword、newPassword，需登录）。新密码为 8–72 字节。
 
 相册支持批量添加：一次最多选择 9 张图片，每张拍摄一件单品，最多同时处理两张。识别结果逐件确认保存，失败项可单独重试。
 
 底部导航将 AI 搭配与今日推荐合并为“搭配推荐”，新增“我的搭配”。支持 AI 保存及手动选择衣物组合；搭配结果与收藏展示全部单品图片和名称。
+
+Agent 入口：[AGENTS.md](AGENTS.md)。现行工程规范：[.agents/README.md](.agents/README.md)。原始需求、确认变更与历史资料：[docs/README.md](docs/README.md)。
