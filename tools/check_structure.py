@@ -30,7 +30,7 @@ for scope in ("server", "app/lib", "app/test", "tools"):
             check_size(path, 500)
 
 documents = [
-    ROOT / "AGENTS.md", ROOT / "README.md", ROOT / "app/README.md",
+    ROOT / "AGENTS.md", ROOT / "README.md", ROOT / "TODO.md", ROOT / "app/README.md",
     ROOT / "docs/README.md", ROOT / "docs/需求变更.md",
     ROOT / "docs/DEPLOYMENT.md",
     *(ROOT / ".agents").glob("*.md"),

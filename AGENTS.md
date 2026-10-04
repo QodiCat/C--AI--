@@ -6,6 +6,7 @@
 ## 开始任务前
 1. 阅读本文件与 [.agents/README.md](.agents/README.md)，按任务加载相关专题及局部规则。
 2. 检查 Git 状态，保留用户改动，不修改无关代码或另一仓库。
+3. 阅读 [TODO.md](TODO.md)，按本次任务维护待办、进行中与完成状态。
 
 ## 常用命令
 - 后端（server/）：`go mod download`、`go run ./cmd/api`、`go test ./...`、`go vet ./...`、`go build -o bin/api ./cmd/api`。
@@ -31,7 +32,7 @@
 | 接口、数据 | [.agents/api.md](.agents/api.md)、[.agents/database.md](.agents/database.md) |
 | 权限、敏感信息 | [.agents/security.md](.agents/security.md) |
 | 运行、部署 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
-| 需求、验收、未决事项 | [docs/README.md](docs/README.md) |
+| 需求、验收、未决事项 | [docs/README.md](docs/README.md)、[TODO.md](TODO.md) |
 
 ## 文档自维护
 - 每次任务按当前代码、配置、验证和用户确认核对文档；需求、结构、接口、命令变化当次更新。

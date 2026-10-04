@@ -92,3 +92,5 @@ go run ./cmd/mailcheck -to recipient@example.com
 Agent 入口：[AGENTS.md](AGENTS.md)。现行工程规范：[.agents/README.md](.agents/README.md)。原始需求、确认变更与历史资料：[docs/README.md](docs/README.md)。
 
 我的搭配支持编辑名称、衣物组合、场景、风格、季节和自定义分类，按分类筛选，并确认删除已有搭配；删除不影响衣橱衣物及已有穿搭记录。
+
+新增功能或问题请写到 [TODO.md](TODO.md)，开发时会同步维护进行中和已完成状态。
