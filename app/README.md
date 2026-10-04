@@ -1,17 +1,12 @@
-# ai_closet_app
+# AI 衣橱前端
 
-A new Flutter project.
+复制 `.env.example` 为 `.env`，设置 `API_BASE_URL=http://localhost:3000`。前端 `.env` 会随客户端公开发布，只允许 API 地址，不要放服务端密钥。
 
-## Getting Started
+```bash
+flutter pub get
+flutter run -d web-server --web-hostname=0.0.0.0 --web-port=8080
+```
 
-This project is a starting point for a Flutter application.
+浏览器访问 `http://localhost:8080`。手机访问时将 `.env` 中 API 地址改为电脑局域网 IP，并在 `server/.env` 配置对应的 `CORS_ORIGIN`。
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+生产部署配置 `API_BASE_URL=/api`，执行 `flutter build web --release`，通过 Nginx 托管 `build/web/` 并代理 API。详细步骤见 [部署文档](../DEPLOYMENT.md)。

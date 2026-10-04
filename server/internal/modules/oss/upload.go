@@ -2,11 +2,13 @@ package oss
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
 	_ "image/png"
 	"io"
+	"log"
 	"net/http"
 	"time"
 
@@ -61,8 +63,18 @@ func registerImageUpload(router *gin.Engine, cfg config.Config) {
 			return
 		}
 		key := fmt.Sprintf("users/%s/originals/%d.jpg", auth.CurrentUserID(c), time.Now().UnixNano())
-		if bucket.PutObject(key, bytes.NewReader(normalized), aliyunoss.ContentType("image/jpeg")) != nil {
-			httpapi.Error(c, 502, "UPLOAD_FAILED", "图片上传 OSS 失败，请检查权限及网络")
+		if err := bucket.PutObject(key, bytes.NewReader(normalized), aliyunoss.ContentType("image/jpeg")); err != nil {
+			message := "图片上传 OSS 失败"
+			var serviceErr aliyunoss.ServiceError
+			if errors.As(err, &serviceErr) {
+				log.Printf("OSS upload failed: bucket=%s region=%s key=%s status=%d code=%s ec=%s request_id=%s", cfg.AliyunOSSBucket, cfg.AliyunOSSRegion, key, serviceErr.StatusCode, serviceErr.Code, serviceErr.Ec, serviceErr.RequestID)
+				message += fmt.Sprintf("（%s，请求ID：%s）", serviceErr.Code, serviceErr.RequestID)
+			} else {
+				// Do not log raw errors: request URLs may contain credentials or signatures.
+				log.Printf("OSS upload failed: bucket=%s region=%s key=%s error_type=%T", cfg.AliyunOSSBucket, cfg.AliyunOSSRegion, key, err)
+				message += "，连接或请求失败，请检查后端网络"
+			}
+			httpapi.Error(c, 502, "UPLOAD_FAILED", message)
 			return
 		}
 		httpapi.OK(c, gin.H{"objectUri": "oss://" + cfg.AliyunOSSBucket + "/" + key})

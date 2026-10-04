@@ -15,6 +15,7 @@ Thumbs.db
 .env
 .env.local
 server/.env
+app/.env
 
 # Local database
 server/data/

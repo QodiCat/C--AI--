@@ -49,7 +49,7 @@ type CloudProcessor struct{ cfg config.Config }
 func NewProcessor(cfg config.Config) Processor { return &CloudProcessor{cfg: cfg} }
 
 func (p *CloudProcessor) Ready() error {
-	if p.cfg.AliyunAccessKeyID == "" || p.cfg.AliyunAccessKeySecret == "" {
+	if p.cfg.AliyunVIAPIAccessKeyID == "" || p.cfg.AliyunVIAPIAccessKeySecret == "" {
 		return fmt.Errorf("阿里云抠图凭据未配置")
 	}
 	if p.cfg.AliyunOSSBucket == "" || p.cfg.AliyunOSSRegion == "" || p.cfg.AliyunOSSAccessKeyID == "" || p.cfg.AliyunOSSAccessKeySecret == "" {
@@ -95,7 +95,7 @@ func (p *CloudProcessor) Process(ctx context.Context, userID, taskID, uri string
 	if err := validateCandidate(result); err != nil {
 		return result, err
 	}
-	seg, err := imageseg.NewClient(&openapi.Config{AccessKeyId: tea.String(p.cfg.AliyunAccessKeyID), AccessKeySecret: tea.String(p.cfg.AliyunAccessKeySecret), Endpoint: tea.String("imageseg.cn-shanghai.aliyuncs.com"), RegionId: tea.String("cn-shanghai"), ReadTimeout: tea.Int(120000), ConnectTimeout: tea.Int(10000)})
+	seg, err := imageseg.NewClient(&openapi.Config{AccessKeyId: tea.String(p.cfg.AliyunVIAPIAccessKeyID), AccessKeySecret: tea.String(p.cfg.AliyunVIAPIAccessKeySecret), Endpoint: tea.String("imageseg.cn-shanghai.aliyuncs.com"), RegionId: tea.String("cn-shanghai"), ReadTimeout: tea.Int(120000), ConnectTimeout: tea.Int(10000)})
 	if err != nil {
 		return result, fmt.Errorf("抠图服务配置无效")
 	}

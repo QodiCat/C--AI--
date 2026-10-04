@@ -22,7 +22,7 @@ MVP 业务闭环已实现：
 ## 后端运行
 
 1. 进入 `server/`
-2. 准备环境变量：参考 `server/.env.example`，配置 PostgreSQL 的 `DATABASE_URL`、阿里云 OSS/商品分割和 DashScope API Key
+2. 准备环境变量：复制 `server/.env.example` 为 `server/.env`，配置 PostgreSQL 的 `DATABASE_URL`、阿里云 OSS/商品分割和 DashScope API Key
 3. 安装依赖：`go mod tidy`
 4. 启动服务：`go run ./cmd/api`
 
@@ -32,9 +32,9 @@ MVP 业务闭环已实现：
 
 ## SMTP 邮件配置
 
-后端启动时读取 `server/.env`（不存在时读取根目录 `.env`），已导出的环境变量优先。
+后端从仓库根目录或 `server/` 启动时，统一读取 `server/.env`，已导出的环境变量优先。
 设置 `SMTP_SERVER`、`SMTP_PORT=465`、`SMTP_USERNAME`、`SMTP_PASSWORD` 和 `FROM_EMAIL`。
-Docker Compose 通过根目录 `.env` 注入同名变量。真实凭据只保存在被 Git 忽略的本地环境文件中。
+真实凭据只保存在被 Git 忽略的本地环境文件中。
 
 在 `server/` 目录验证 TLS 连接和 SMTP 登录：
 
@@ -55,8 +55,9 @@ go run ./cmd/mailcheck -to recipient@example.com
 ## 前端运行
 
 1. 进入 `app/`
-2. 执行 `flutter pub get`
-3. 运行：`flutter run`
+2. 复制 `app/.env.example` 为 `app/.env`，设置 `API_BASE_URL`（仅公开配置）
+3. 执行 `flutter pub get`
+4. 运行：`flutter run -d web-server --web-hostname=0.0.0.0 --web-port=8080`
 
 当前前端默认请求：`http://localhost:3000`
 
@@ -64,7 +65,7 @@ go run ./cmd/mailcheck -to recipient@example.com
 
 ## 服务器部署
 
-Docker Compose 部署、HTTPS、数据库和对象存储配置见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+源码部署、HTTPS、数据库和对象存储配置见 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
 ## 外部服务接入说明
 
