@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
+import "../../outfits/presentation/outfit_images.dart";
 import "../data/ai_stylist_repository.dart";
 
 class AiStylistPage extends StatefulWidget {
@@ -10,8 +11,9 @@ class AiStylistPage extends StatefulWidget {
 }
 
 class _State extends State<AiStylistPage> {
-  late final repo =
-      AiStylistRepository(ApiClient(baseUrl: AppConfig.apiBaseUrl));
+  late final client = ApiClient(baseUrl: AppConfig.apiBaseUrl);
+  late final repo = AiStylistRepository(client);
+  late final catalog = OutfitCatalog(client);
   String scene = "通勤", season = "秋", weather = "晴", style = "极简";
   final temperature = TextEditingController(text: "24");
   bool loading = false;
@@ -46,7 +48,7 @@ class _State extends State<AiStylistPage> {
   Future<void> save(Map<String, dynamic> candidate) async {
     try {
       await repo.save(candidate);
-      if (mounted) toast("已保存到搭配");
+      if (mounted) toast("已保存到我的搭配");
     } catch (e) {
       if (mounted) toast(e.toString());
     }
@@ -129,7 +131,9 @@ class _State extends State<AiStylistPage> {
                               const SizedBox(height: 6),
                               Text(c["reason"]),
                               const SizedBox(height: 10),
-                              Text("${(c["itemIds"] as List).length} 件衣橱单品"),
+                              OutfitImages(
+                                  ids: outfitItemIds(c["itemIds"]),
+                                  catalog: catalog),
                               Wrap(children: [
                                 TextButton.icon(
                                     onPressed: () => save(c),

@@ -5,6 +5,7 @@ import "../profile/presentation/profile_page.dart";
 import "../today_recommendation/presentation/today_recommendation_page.dart";
 import "../wardrobe/presentation/wardrobe_page.dart";
 import "../wear_history/presentation/wear_history_page.dart";
+import "../outfits/presentation/my_outfits_page.dart";
 
 class AppShellPage extends StatefulWidget {
   const AppShellPage({super.key, required this.onLogout});
@@ -21,8 +22,8 @@ class _AppShellPageState extends State<AppShellPage> {
   Widget build(BuildContext context) {
     final pages = [
       const WardrobePage(),
-      const AiStylistPage(),
-      const TodayRecommendationPage(),
+      const OutfitRecommendationPage(),
+      const MyOutfitsPage(),
       const WearHistoryPage(),
       ProfilePage(onLogout: widget.onLogout),
     ];
@@ -44,12 +45,12 @@ class _AppShellPageState extends State<AppShellPage> {
           NavigationDestination(
             icon: Icon(Icons.auto_awesome_outlined),
             selectedIcon: Icon(Icons.auto_awesome),
-            label: "AI搭配",
+            label: "搭配推荐",
           ),
           NavigationDestination(
-            icon: Icon(Icons.wb_sunny_outlined),
-            selectedIcon: Icon(Icons.wb_sunny),
-            label: "推荐",
+            icon: Icon(Icons.collections_bookmark_outlined),
+            selectedIcon: Icon(Icons.collections_bookmark),
+            label: "我的搭配",
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
@@ -65,4 +66,17 @@ class _AppShellPageState extends State<AppShellPage> {
       ),
     );
   }
+}
+
+class OutfitRecommendationPage extends StatelessWidget {
+  const OutfitRecommendationPage({super.key});
+  @override
+  Widget build(BuildContext context) => const DefaultTabController(
+      length: 2,
+      child: Column(children: [
+        TabBar(tabs: [Tab(text: "AI 搭配"), Tab(text: "今日推荐")]),
+        Expanded(
+            child: TabBarView(
+                children: [AiStylistPage(), TodayRecommendationPage()])),
+      ]));
 }

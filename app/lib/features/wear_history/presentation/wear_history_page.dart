@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
+import "../../outfits/presentation/outfit_images.dart";
 
 class WearHistoryPage extends StatefulWidget {
   const WearHistoryPage({super.key});
@@ -10,6 +11,7 @@ class WearHistoryPage extends StatefulWidget {
 
 class _WearHistoryPageState extends State<WearHistoryPage> {
   final client = ApiClient(baseUrl: AppConfig.apiBaseUrl);
+  late final catalog = OutfitCatalog(client);
   DateTime month = DateTime(DateTime.now().year, DateTime.now().month);
   List<dynamic> logs = [], outfits = [];
   bool loading = true;
@@ -47,10 +49,15 @@ class _WearHistoryPageState extends State<WearHistoryPage> {
     return matches.isEmpty ? "已删除搭配" : matches.first["name"] as String;
   }
 
+  List<String> outfitIds(String id) {
+    final matches = outfits.where((outfit) => outfit["id"] == id);
+    return matches.isEmpty ? [] : outfitItemIds(matches.first["itemIds"]);
+  }
+
   Future<void> record() async {
     if (outfits.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("请先在 AI 搭配中保存一套搭配")));
+          .showSnackBar(const SnackBar(content: Text("请先在我的搭配中添加或保存一套搭配")));
       return;
     }
     String selected = outfits.first["id"] as String;
@@ -73,7 +80,9 @@ class _WearHistoryPageState extends State<WearHistoryPage> {
                                 value: o["id"] as String,
                                 child: Text(o["name"] as String)))
                             .toList(),
-                        onChanged: (v) => selected = v!),
+                        onChanged:
+                            saving ? null : (v) => update(() => selected = v!)),
+                    OutfitImages(ids: outfitIds(selected), catalog: catalog),
                     TextField(
                         controller: weather,
                         decoration: const InputDecoration(labelText: "天气")),
@@ -184,9 +193,15 @@ class _WearHistoryPageState extends State<WearHistoryPage> {
                       child: ListTile(
                     title: Text(
                         "${log['wearDate']} · ${outfitName(log['outfitId'] as String)}"),
-                    subtitle: Text(
-                        "${log['weather']} ${log['temperature']}°C\n${log['note'] ?? ''}"),
-                    isThreeLine: true,
+                    subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              "${log['weather']} ${log['temperature']}°C\n${log['note'] ?? ''}"),
+                          OutfitImages(
+                              ids: outfitIds(log["outfitId"] as String),
+                              catalog: catalog),
+                        ]),
                     onTap: () => showDialog<void>(
                         context: context,
                         builder: (_) =>

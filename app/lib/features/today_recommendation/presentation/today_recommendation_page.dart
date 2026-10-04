@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
+import "../../outfits/presentation/outfit_images.dart";
 import "../data/today_recommendation_repository.dart";
 
 class TodayRecommendationPage extends StatefulWidget {
@@ -12,6 +13,7 @@ class TodayRecommendationPage extends StatefulWidget {
 
 class _TodayRecommendationPageState extends State<TodayRecommendationPage> {
   final client = ApiClient(baseUrl: AppConfig.apiBaseUrl);
+  late final catalog = OutfitCatalog(client);
   final weather = TextEditingController();
   final temperature = TextEditingController();
   final scene = TextEditingController(text: "通勤");
@@ -49,6 +51,22 @@ class _TodayRecommendationPageState extends State<TodayRecommendationPage> {
           candidates = result;
           look = 0;
         });
+      }
+    } catch (e) {
+      if (mounted) setState(() => error = e.toString());
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> save() async {
+    setState(() => loading = true);
+    try {
+      await client.post("/ai/outfits/save",
+          body: Map<String, dynamic>.from(candidates[look] as Map));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("已保存到我的搭配")));
       }
     } catch (e) {
       if (mounted) setState(() => error = e.toString());
@@ -125,15 +143,19 @@ class _TodayRecommendationPageState extends State<TodayRecommendationPage> {
                             const SizedBox(height: 12),
                             Text(candidates[look]["reason"] as String),
                             const SizedBox(height: 12),
-                            Text(
-                                "${(candidates[look]['itemIds'] as List).length} 件衣橱单品"),
-                            Row(children: [
+                            OutfitImages(
+                                ids: outfitItemIds(candidates[look]["itemIds"]),
+                                catalog: catalog),
+                            Wrap(spacing: 8, children: [
                               TextButton(
                                   onPressed: loading
                                       ? null
                                       : () => setState(() => look =
                                           (look + 1) % candidates.length),
                                   child: const Text("换一套")),
+                              TextButton(
+                                  onPressed: loading ? null : save,
+                                  child: const Text("保存到我的搭配")),
                               FilledButton(
                                   onPressed: loading ? null : wear,
                                   child: const Text("今天穿这套"))

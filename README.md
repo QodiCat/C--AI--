@@ -86,3 +86,5 @@ go run ./cmd/mailcheck -to recipient@example.com
 密码接口：`POST /auth/password/reset/code`（email）、`POST /auth/password/reset`（email、code、newPassword）、`POST /auth/password/change`（currentPassword、newPassword，需登录）。新密码为 8–72 字节。
 
 相册支持批量添加：一次最多选择 9 张图片，每张拍摄一件单品，最多同时处理两张。识别结果逐件确认保存，失败项可单独重试。
+
+底部导航将 AI 搭配与今日推荐合并为“搭配推荐”，新增“我的搭配”。支持 AI 保存及手动选择衣物组合；搭配结果与收藏展示全部单品图片和名称。
