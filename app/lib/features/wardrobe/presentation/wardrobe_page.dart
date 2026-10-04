@@ -7,6 +7,7 @@ import "package:flutter/material.dart";
 import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
 import "../data/wardrobe_repository.dart";
+import "batch_upload_page.dart";
 
 class WardrobeItem {
   const WardrobeItem(this.name, this.category, this.color, this.icon, this.tint,
@@ -229,36 +230,67 @@ class _WardrobePageState extends State<WardrobePage> {
               ]),
             ])));
     if (source == null) return;
-    XFile? file;
     try {
-      file = await ImagePicker().pickImage(
-        source: source == "camera" ? ImageSource.camera : ImageSource.gallery,
-        maxWidth: 1900,
-        maxHeight: 1900,
-        imageQuality: 85,
-      );
+      final picker = ImagePicker();
+      final List<XFile> files;
+      if (source == "camera") {
+        final file = await picker.pickImage(
+            source: ImageSource.camera,
+            maxWidth: 1900,
+            maxHeight: 1900,
+            imageQuality: 85);
+        files = file == null ? [] : [file];
+      } else {
+        files = await picker.pickMultiImage(
+            maxWidth: 1900, maxHeight: 1900, imageQuality: 85);
+      }
+      if (files.isEmpty || !mounted) return;
+      if (files.length > 9) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("每批最多选择 9 张图片，请重新选择")));
+        return;
+      }
+      final photos = <BatchPhoto>[];
+      for (final file in files) {
+        final bytes = await file.readAsBytes();
+        if (bytes.length > 10 * 1024 * 1024) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("${file.name} 超过 10 MB，请重新选择")));
+          }
+          return;
+        }
+        final extension = file.name.split(".").last.toLowerCase();
+        photos.add(BatchPhoto(
+            bytes,
+            file.name,
+            extension == "png"
+                ? "image/png"
+                : extension == "webp"
+                    ? "image/webp"
+                    : "image/jpeg"));
+      }
+      if (!mounted) return;
+      if (photos.length == 1) {
+        final photo = photos.first;
+        await Navigator.push<WardrobeItem>(
+            context,
+            MaterialPageRoute(
+                builder: (_) => UploadProcessingPage(
+                    image: photo.bytes,
+                    fileName: photo.name,
+                    contentType: photo.contentType)));
+      } else {
+        await Navigator.push<void>(context,
+            MaterialPageRoute(builder: (_) => BatchUploadPage(photos: photos)));
+      }
+      if (mounted) await _loadItems();
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("无法打开相机或相册，请检查权限；手机浏览器也可从相册选择拍好的照片")));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("无法读取图片，请检查权限后重试")));
       }
-      return;
     }
-    if (file == null) return;
-    final bytes = await file.readAsBytes();
-    if (!mounted) return;
-    final extension = file.name.split(".").last.toLowerCase();
-    final contentType = extension == "png"
-        ? "image/png"
-        : extension == "webp"
-            ? "image/webp"
-            : "image/jpeg";
-    final result = await Navigator.push<WardrobeItem>(
-        context,
-        MaterialPageRoute(
-            builder: (_) => UploadProcessingPage(
-                image: bytes, fileName: file!.name, contentType: contentType)));
-    if (result != null) await _loadItems();
   }
 
   void _showFilters() => showModalBottomSheet(

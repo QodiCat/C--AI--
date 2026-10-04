@@ -84,3 +84,5 @@ go run ./cmd/mailcheck -to recipient@example.com
 `MockProvider` 仅用于显式启用的开发/自动化测试，生产环境禁止使用。部署和完整配置见 [DEPLOYMENT.md](DEPLOYMENT.md)。
 
 密码接口：`POST /auth/password/reset/code`（email）、`POST /auth/password/reset`（email、code、newPassword）、`POST /auth/password/change`（currentPassword、newPassword，需登录）。新密码为 8–72 字节。
+
+相册支持批量添加：一次最多选择 9 张图片，每张拍摄一件单品，最多同时处理两张。识别结果逐件确认保存，失败项可单独重试。
