@@ -90,3 +90,5 @@ go run ./cmd/mailcheck -to recipient@example.com
 底部导航将 AI 搭配与今日推荐合并为“搭配推荐”，新增“我的搭配”。支持 AI 保存及手动选择衣物组合；搭配结果与收藏展示全部单品图片和名称。
 
 Agent 入口：[AGENTS.md](AGENTS.md)。现行工程规范：[.agents/README.md](.agents/README.md)。原始需求、确认变更与历史资料：[docs/README.md](docs/README.md)。
+
+我的搭配支持编辑名称、衣物组合、场景、风格、季节和自定义分类，按分类筛选，并确认删除已有搭配；删除不影响衣橱衣物及已有穿搭记录。

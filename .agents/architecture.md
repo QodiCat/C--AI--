@@ -9,7 +9,7 @@
 - server/internal/infrastructure/：PostgreSQL/测试 SQLite、邮件和 Qwen 适配；models/ 为 GORM 数据模型，httpapi/ 为响应契约。
 - app/lib/core/：网络、登录会话、公开配置和基础主题；features/ 按认证、衣橱、搭配、推荐、记录和个人资料组织。
 - app/lib/features/wardrobe/models/：衣物展示模型；presentation/ 的列表、上传处理、识别确认、详情和批量处理分别独立。
-- app/lib/features/outfits/：我的搭配、手动组合与所有单品图片展示。AI 与今日推荐合并在导航页，接口领域仍各自保留。
+- app/lib/features/outfits/：我的搭配列表/分类筛选、独立新增/编辑组合页面与所有单品图片展示。AI 与今日推荐合并在导航页，接口领域仍各自保留。
 - .agents/：现行工程规则；docs/：产品资料、源码部署、人类交付和明确标注的历史方案；UI设计图/：原始视觉资料。
 
 ## 核心边界

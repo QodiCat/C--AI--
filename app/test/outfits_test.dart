@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:ai_closet_app/core/network/api_client.dart';
 import 'package:ai_closet_app/features/outfits/presentation/my_outfits_page.dart';
+import 'package:ai_closet_app/features/outfits/presentation/outfit_editor_page.dart';
 import 'package:ai_closet_app/features/outfits/presentation/outfit_images.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,12 +74,21 @@ void main() {
           return response({'id': 'new-outfit'});
         }));
     await tester
-        .pumpWidget(MaterialApp(home: ManualOutfitPage(client: client)));
+        .pumpWidget(MaterialApp(home: OutfitEditorPage(client: client)));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, '我的通勤搭配');
+    tester.testTextInput.hide();
+    await tester.pump();
+    await Scrollable.ensureVisible(
+        tester.element(find.byKey(const ValueKey('outfit-item-shirt'))),
+        alignment: 0.5);
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('outfit-item-shirt')));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.byKey(const ValueKey('outfit-item-pants')));
+    await Scrollable.ensureVisible(
+        tester.element(find.byKey(const ValueKey('outfit-item-pants'))),
+        alignment: 0.5);
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('outfit-item-pants')));
     await tester.pumpAndSettle();
     expect(find.text('已选择 2 件'), findsOneWidget);

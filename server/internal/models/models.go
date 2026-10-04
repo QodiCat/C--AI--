@@ -52,6 +52,7 @@ type Outfit struct {
 	ID          string    `gorm:"primaryKey" json:"id"`
 	UserID      string    `gorm:"index" json:"userId"`
 	Name        string    `json:"name"`
+	Category    string    `gorm:"index;not null;default:''" json:"category"`
 	Scene       string    `json:"scene"`
 	Style       string    `json:"style"`
 	Season      string    `json:"season"`
