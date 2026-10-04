@@ -27,6 +27,7 @@ type credentialsRequest struct {
 }
 
 func RegisterRoutes(router *gin.Engine, db *gorm.DB, verifier *Verifier) {
+	registerPasswordRoutes(router, db, verifier)
 	router.POST("/auth/register/code", func(c *gin.Context) {
 		var req struct {
 			Email string `json:"email" binding:"required,email,max=254"`
@@ -63,7 +64,11 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB, verifier *Verifier) {
 		}
 		email := strings.ToLower(strings.TrimSpace(req.Email))
 		var count int64
-		if db.Model(&models.User{}).Where("email = ?", email).Count(&count); count > 0 {
+		if err := db.Model(&models.User{}).Where("email = ?", email).Count(&count).Error; err != nil {
+			httpapi.Error(c, 500, "REGISTER_FAILED", "数据库查询失败，请稍后重试")
+			return
+		}
+		if count > 0 {
 			httpapi.Error(c, http.StatusConflict, "EMAIL_EXISTS", "该邮箱已注册")
 			return
 		}
@@ -78,7 +83,15 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB, verifier *Verifier) {
 			nickname = strings.Split(email, "@")[0]
 		}
 		user := models.User{ID: newSecureID("user"), Email: email, PasswordHash: string(hash), Nickname: nickname, LoginType: "email", StylePreferences: "[]", CreatedAt: now, UpdatedAt: now}
-		if err := verifier.Register(email, req.Code, func() error { return db.Create(&user).Error }); err != nil {
+		session := newSession(user.ID)
+		if err := verifier.Register(email, req.Code, func() error {
+			return db.Transaction(func(tx *gorm.DB) error {
+				if err := tx.Create(&user).Error; err != nil {
+					return err
+				}
+				return tx.Create(&session).Error
+			})
+		}); err != nil {
 			if errors.Is(err, ErrCode) {
 				httpapi.Error(c, 400, "INVALID_CODE", err.Error())
 				return
@@ -86,7 +99,7 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB, verifier *Verifier) {
 			httpapi.Error(c, 500, "REGISTER_FAILED", "注册失败")
 			return
 		}
-		respondWithSession(c, db, user)
+		respondWithCreatedSession(c, user, session)
 	})
 
 	router.POST("/auth/login", func(c *gin.Context) {
@@ -129,12 +142,20 @@ func RequireAuth(db *gorm.DB) gin.HandlerFunc {
 func CurrentUserID(c *gin.Context) string { return c.GetString(userIDContextKey) }
 
 func respondWithSession(c *gin.Context, db *gorm.DB, user models.User) {
-	now := time.Now()
-	session := models.Session{ID: newSecureID("session"), UserID: user.ID, Token: newSecureID("token"), ExpiresAt: now.Add(30 * 24 * time.Hour), CreatedAt: now}
+	session := newSession(user.ID)
 	if err := db.Create(&session).Error; err != nil {
 		httpapi.Error(c, 500, "LOGIN_FAILED", "登录失败")
 		return
 	}
+	respondWithCreatedSession(c, user, session)
+}
+
+func newSession(userID string) models.Session {
+	now := time.Now()
+	return models.Session{ID: newSecureID("session"), UserID: userID, Token: newSecureID("token"), ExpiresAt: now.Add(30 * 24 * time.Hour), CreatedAt: now}
+}
+
+func respondWithCreatedSession(c *gin.Context, user models.User, session models.Session) {
 	httpapi.OK(c, gin.H{"accessToken": session.Token, "expiresAt": session.ExpiresAt, "user": user})
 }
 

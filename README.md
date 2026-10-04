@@ -48,7 +48,7 @@ go run ./cmd/mailcheck
 go run ./cmd/mailcheck -to recipient@example.com
 ```
 
-邮件发送模块使用隐式 TLS、证书验证和连接超时。注册时需先发送邮箱验证码，再提交邮箱、密码和验证码。验证码 10 分钟有效，60 秒后可重发，连续错误 5 次后失效，同一来源每小时最多发送 10 次。验证码仅保存在后端内存中，服务重启后需重新获取。密码找回尚未接入。
+邮件发送模块使用隐式 TLS、证书验证和连接超时。注册时需先发送邮箱验证码，再提交邮箱、密码和验证码。验证码 10 分钟有效，60 秒后可重发，连续错误 5 次后失效，同一来源每小时最多发送 10 次。验证码仅保存在后端内存中，服务重启后需重新获取。登录页支持“忘记密码”：通过注册邮箱验证码重置密码；个人中心支持“修改密码”：验证当前密码后更新。两种操作都会撤销全部登录会话，需要重新登录。重置验证码与注册验证码独立，有效期 10 分钟，60 秒内不能重发，最多允许 5 次错误尝试。
 
 接口：`POST /auth/register/code`（`email`）；`POST /auth/register`（`email`、`password`、`nickname`、`code`）。
 
@@ -82,3 +82,5 @@ go run ./cmd/mailcheck -to recipient@example.com
 图像提取名称、分类、颜色、图案、品牌、材质、版型、季节、风格、场景和待确认字段；搭配模型只能使用当前用户的可穿单品 ID。服务缺少配置或调用失败时返回真实错误，不回退到模拟内容。
 
 `MockProvider` 仅用于显式启用的开发/自动化测试，生产环境禁止使用。部署和完整配置见 [DEPLOYMENT.md](DEPLOYMENT.md)。
+
+密码接口：`POST /auth/password/reset/code`（email）、`POST /auth/password/reset`（email、code、newPassword）、`POST /auth/password/change`（currentPassword、newPassword，需登录）。新密码为 8–72 字节。

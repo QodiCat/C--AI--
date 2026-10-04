@@ -6,6 +6,7 @@ import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
 import "../../../core/network/auth_session.dart";
 import "../data/auth_repository.dart";
+import "password_page.dart";
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key, required this.onAuthenticated});
@@ -186,6 +187,18 @@ class _AuthPageState extends State<AuthPage> {
                                         child: CircularProgressIndicator(
                                             strokeWidth: 2))
                                     : Text(_registering ? "注册并登录" : "登录")),
+                            if (!_registering)
+                              TextButton(
+                                onPressed: _loading
+                                    ? null
+                                    : () => Navigator.of(context).push(
+                                          MaterialPageRoute<void>(
+                                              builder: (_) => PasswordPage(
+                                                  initialEmail:
+                                                      _email.text.trim())),
+                                        ),
+                                child: const Text("忘记密码？"),
+                              ),
                             TextButton(
                                 onPressed: _loading || _sendingCode
                                     ? null

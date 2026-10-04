@@ -6,7 +6,7 @@ PostgreSQL 保存用户、衣物、识别任务、搭配、反馈、穿搭记录
 
 后端配置放在 `server/.env`，参考 `server/.env.example`，保留已有密钥和 SMTP 配置。前端配置单独放在 `app/.env`，参考 `app/.env.example`，仅填写公开的 `API_BASE_URL`。至少填写：
 
-- `DATABASE_URL`：已安装并运行的 PostgreSQL 连接地址；也可使用 `PGHOST`、`PGPORT`、`PGUSER`、`PGPASSWORD`、`PGDATABASE` 和 `PGSSLMODE`。
+- `DATABASE_URL`：已安装并运行的 PostgreSQL 连接地址；留空时使用 `POSTGRES_HOST`、`POSTGRES_PORT`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB` 和 `POSTGRES_SSLMODE`（仍兼容 `PG*` 配置）。
 - `CORS_ORIGIN`：允许的前端来源，多个来源用逗号分隔。
 - `ALIYUN_ACCESS_KEY_ID` / `ALIYUN_ACCESS_KEY_SECRET`：允许目标 OSS Bucket 上传和读取的 RAM 凭据。
 - `ALIYUN_VIAPI_ACCESS_KEY_ID` / `ALIYUN_VIAPI_ACCESS_KEY_SECRET`：允许调用视觉智能商品分割的 RAM 凭据。

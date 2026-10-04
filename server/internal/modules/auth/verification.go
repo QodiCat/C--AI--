@@ -37,6 +37,18 @@ func NewVerifier(sender MailSender) *Verifier {
 	return &Verifier{codes: make(map[string]verification), ips: make(map[string]ipQuota), sender: sender}
 }
 func (v *Verifier) Send(email, ip string) error {
+	return v.send(email, ip, email, "注册")
+}
+
+func (v *Verifier) SendPasswordReset(email, ip string) error {
+	return v.send(email, ip, "reset:"+email, "重置密码")
+}
+
+func (v *Verifier) ResetPassword(email, code string, update func() error) error {
+	return v.Register("reset:"+email, code, update)
+}
+
+func (v *Verifier) send(email, ip, key, purpose string) error {
 	v.mu.Lock()
 	defer v.mu.Unlock()
 	now := time.Now()
@@ -50,7 +62,7 @@ func (v *Verifier) Send(email, ip string) error {
 			delete(v.ips, k)
 		}
 	}
-	if c, ok := v.codes[email]; ok && now.Sub(c.sent) < time.Minute {
+	if c, ok := v.codes[key]; ok && now.Sub(c.sent) < time.Minute {
 		return ErrRateLimit
 	}
 	q := v.ips[ip]
@@ -67,10 +79,10 @@ func (v *Verifier) Send(email, ip string) error {
 		return err
 	}
 	code := fmt.Sprintf("%06d", n.Int64())
-	if err := v.sender.Send(email, "AI衣橱注册验证码", "你的注册验证码是："+code+"\n验证码 10 分钟内有效，请勿向他人透露。"); err != nil {
+	if err := v.sender.Send(email, "AI衣橱"+purpose+"验证码", "你的"+purpose+"验证码是："+code+"\n验证码 10 分钟内有效，请勿向他人透露。"); err != nil {
 		return err
 	}
-	v.codes[email] = verification{hash: sha256.Sum256([]byte(code)), expires: time.Now().Add(10 * time.Minute), sent: now}
+	v.codes[key] = verification{hash: sha256.Sum256([]byte(code)), expires: time.Now().Add(10 * time.Minute), sent: now}
 	return nil
 }
 

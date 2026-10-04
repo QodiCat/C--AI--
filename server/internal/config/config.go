@@ -90,13 +90,13 @@ func databaseURL() string {
 	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
 		return dsn
 	}
-	host := os.Getenv("PGHOST")
+	host := getEnv("POSTGRES_HOST", os.Getenv("PGHOST"))
 	if host == "" {
 		return ""
 	}
-	connection := url.URL{Scheme: "postgresql", Host: net.JoinHostPort(host, getEnv("PGPORT", "5432")), User: url.UserPassword(getEnv("PGUSER", "ai_closet"), os.Getenv("PGPASSWORD")), Path: "/" + getEnv("PGDATABASE", "ai_closet")}
+	connection := url.URL{Scheme: "postgresql", Host: net.JoinHostPort(host, getEnv("POSTGRES_PORT", getEnv("PGPORT", "5432"))), User: url.UserPassword(getEnv("POSTGRES_USER", getEnv("PGUSER", "ai_closet")), getEnv("POSTGRES_PASSWORD", os.Getenv("PGPASSWORD"))), Path: "/" + getEnv("POSTGRES_DB", getEnv("PGDATABASE", "ai_closet"))}
 	params := connection.Query()
-	params.Set("sslmode", getEnv("PGSSLMODE", "require"))
+	params.Set("sslmode", getEnv("POSTGRES_SSLMODE", getEnv("PGSSLMODE", "require")))
 	connection.RawQuery = params.Encode()
 	return connection.String()
 }

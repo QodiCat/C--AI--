@@ -25,5 +25,23 @@ class AuthRepository {
   Future<Map<String, dynamic>> sendRegistrationCode(String email) =>
       _apiClient.post("/auth/register/code", body: {"email": email});
 
+  Future<Map<String, dynamic>> sendPasswordResetCode(String email) =>
+      _apiClient.post("/auth/password/reset/code", body: {"email": email});
+
+  Future<Map<String, dynamic>> resetPassword(
+          String email, String code, String password) =>
+      _apiClient.post("/auth/password/reset", body: {
+        "email": email,
+        "code": code,
+        "newPassword": password,
+      });
+
+  Future<Map<String, dynamic>> changePassword(
+          String current, String password) =>
+      _apiClient.post("/auth/password/change", body: {
+        "currentPassword": current,
+        "newPassword": password,
+      });
+
   Future<Map<String, dynamic>> logout() => _apiClient.post("/auth/logout");
 }

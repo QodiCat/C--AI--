@@ -95,7 +95,7 @@ func (p *CloudProcessor) Process(ctx context.Context, userID, taskID, uri string
 	if err := validateCandidate(result); err != nil {
 		return result, err
 	}
-	seg, err := imageseg.NewClient(&openapi.Config{AccessKeyId: tea.String(p.cfg.AliyunVIAPIAccessKeyID), AccessKeySecret: tea.String(p.cfg.AliyunVIAPIAccessKeySecret), Endpoint: tea.String("imageseg.cn-shanghai.aliyuncs.com"), RegionId: tea.String("cn-shanghai"), ReadTimeout: tea.Int(120000), ConnectTimeout: tea.Int(10000)})
+	seg, err := imageseg.NewClient(&openapi.Config{AccessKeyId: tea.String(p.cfg.AliyunVIAPIAccessKeyID), AccessKeySecret: tea.String(p.cfg.AliyunVIAPIAccessKeySecret), Endpoint: tea.String("imageseg.cn-shanghai.aliyuncs.com"), Protocol: tea.String("https"), RegionId: tea.String("cn-shanghai"), ReadTimeout: tea.Int(120000), ConnectTimeout: tea.Int(10000)})
 	if err != nil {
 		return result, fmt.Errorf("抠图服务配置无效")
 	}
@@ -115,7 +115,7 @@ func (p *CloudProcessor) Process(ctx context.Context, userID, taskID, uri string
 		output, err = seg.SegmentCommodityAdvance(&imageseg.SegmentCommodityAdvanceRequest{ImageURLObject: bytes.NewReader(raw), ReturnForm: tea.String("crop")}, &util.RuntimeOptions{Autoretry: tea.Bool(false)})
 	}
 	if err != nil {
-		return result, fmt.Errorf("阿里云商品抠图失败，请检查服务开通、权限及图片要求")
+		return result, segmentationError(err, p.cfg.AliyunOSSRegion)
 	}
 	if output == nil || output.Body == nil || output.Body.Data == nil || output.Body.Data.ImageURL == nil {
 		return result, fmt.Errorf("抠图服务未返回图片")

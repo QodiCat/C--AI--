@@ -3,6 +3,7 @@ import "package:flutter/material.dart";
 import "../../../core/network/auth_session.dart";
 import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
+import "../../auth/presentation/password_page.dart";
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key, required this.onLogout});
@@ -262,6 +263,18 @@ class _ProfilePageState extends State<ProfilePage> {
                       subtitle: Text(preferences.join(" · ")),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: editPreferences),
+                  ListTile(
+                      leading: const Icon(Icons.lock_outline),
+                      title: const Text("修改密码"),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        final changed = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const PasswordPage(changePassword: true)),
+                        );
+                        if (changed == true && mounted) widget.onLogout();
+                      }),
                   SwitchListTile(
                       title: const Text("允许图片用于模型优化"),
                       value: profile!["allowModelTraining"] as bool,
