@@ -33,6 +33,7 @@ type updatePrivacyRequest struct {
 
 func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 	registerBodyMeasurements(router, db)
+	registerWardrobeDisplay(router, db)
 	router.GET("/me", func(c *gin.Context) {
 		userID := auth.CurrentUserID(c)
 		var user models.User

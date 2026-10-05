@@ -24,3 +24,6 @@ GET /me 返回 height、weight、bust、hip、waist、shoulderWidth、thighCircu
 
 ## 2026-10-05 今日 AI 搭配
 移除 POST /ai/outfits/generate；保存 /ai/outfits/save 保留，旧 AI 搭配不删除。POST /ai/today-recommendation/generate 改为 {latitude:number,longitude:number,scene:string}；经登录认证后校验坐标范围，后端查天气再调用 AI。旧 weather/temperature 不能替代服务端查询；未传坐标返回 400，天气失败返回 502 WEATHER_UNAVAILABLE。返回 data:{candidates:[...],weather:{latitude,longitude,date,time,timezone,weather,temperature,feelsLike,minimum,maximum,wind}}。单位温度 °C、风速 km/h；查询及返回坐标四舍五入到三位小数。天气日期须匹配当地今天，当前天气超过三小时、超前超过半小时或字段缺失均拒绝。
+
+## 2026-10-05 衣橱显示偏好
+GET /me 新增 wardrobeDisplayPreferences，为 JSON 字符串，默认 {}；对象包含 categories、seasons 数组。PATCH /me/wardrobe-display 提交完整 {categories:[...],seasons:[...]}，两字段必传，空数组表示该维度不限制；categories 可选上装/下装/外套/裙装/鞋履/包袋/配饰，seasons 为春/夏/秋/冬，未知值/重复值/null 返回 400 INVALID_DISPLAY_PREFERENCES。仅更新当前用户的显示偏好；失败返回 500 DISPLAY_UPDATE_FAILED，成功返回当前 User。接口不限制 /items 或 AI 数据源，Flutter 在衣橱列表应用偏好。

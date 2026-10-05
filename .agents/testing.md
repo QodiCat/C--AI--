@@ -28,3 +28,9 @@
 - Flutter analyze --no-pub 无问题；flutter test --no-pub 18 项通过，覆盖只保留场景输入、获取设备坐标、天气展示、失败重试、当地日期/天气一致的记录；flutter build web --release --no-pub 通过。
 - 使用公开示例坐标验证 Open-Meteo 真实接口连通与字段格式；无用户定位数据或收费 AI 调用。Android 前台粗略定位清单已由 tools/configure_location.py 配置；iOS 工程未生成。
 - 结构与 git diff --check 通过，AGENTS.md 实测 45 行。未启动真实服务、部署、迁移数据库、构建 Android/iOS 或验证真机 GPS/浏览器权限/客户验收。
+
+## 2026-10-05 衣橱显示设置验证
+- Go 全套 go test ./...、go vet ./... 通过；新增默认显示全部、旧用户迁移保留数据、多选保存/读取、非法/重复/null 选项、鉴权与用户隔离、写入失败回滚、恢复全部验证。
+- Flutter analyze --no-pub 无问题，flutter test --no-pub 22 项通过；新增类型与多季节组合匹配、四季/历史标签、设置保存与实际列表/分类入口过滤、重进持久化、失败保留选择、恢复全部、加载失败重试验证。
+- 初次分析发现新增代码括号风格问题，修正后复验通过。结构检查与 git diff --check 通过，AGENTS.md 实测 45 行，维护源码均不超过 500 行。
+- 未启动真实服务、执行真实 PostgreSQL 迁移、生产构建、部署或真机/客户验收。

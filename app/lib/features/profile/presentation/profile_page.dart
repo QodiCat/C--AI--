@@ -1,4 +1,6 @@
 import "dart:convert";
+import "../../wardrobe/presentation/wardrobe_display_settings_page.dart";
+import "../../wardrobe/data/wardrobe_display_repository.dart";
 import "body_measurements_page.dart";
 import "../data/profile_repository.dart";
 import "package:flutter/material.dart";
@@ -272,6 +274,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                     profile: profile!,
                                     repository: ProfileRepository(client))));
                         if (saved == true && mounted) await load();
+                      }),
+                  ListTile(
+                      leading: const Icon(Icons.settings_outlined),
+                      title: const Text("衣橱显示设置"),
+                      subtitle: const Text("选择显示的衣物类型和季节"),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                                builder: (_) => WardrobeDisplaySettingsPage(
+                                    repository:
+                                        WardrobeDisplayRepository(client))));
                       }),
                   ListTile(
                       title: const Text("风格偏好"),

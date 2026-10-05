@@ -4,6 +4,9 @@ import "package:flutter/material.dart";
 import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
 import "../data/wardrobe_repository.dart";
+import "../data/wardrobe_display_repository.dart";
+import "../models/wardrobe_display_preferences.dart";
+import "wardrobe_display_settings_page.dart";
 import "batch_upload_page.dart";
 
 import "../models/wardrobe_item.dart";
@@ -11,7 +14,8 @@ import "upload_processing_page.dart";
 import "item_detail_page.dart";
 
 class WardrobePage extends StatefulWidget {
-  const WardrobePage({super.key});
+  const WardrobePage({super.key, this.client});
+  final ApiClient? client;
   @override
   State<WardrobePage> createState() => _WardrobePageState();
 }
@@ -20,12 +24,14 @@ class _WardrobePageState extends State<WardrobePage> {
   String category = "全部";
   String? season;
   final search = TextEditingController();
-  static const categories = ["全部", "上装", "下装", "外套", "裙装", "鞋履", "包袋", "配饰"];
+  WardrobeDisplayPreferences display = const WardrobeDisplayPreferences();
+  List<String> get categories => ["全部", ...display.visibleCategories];
   final items = <WardrobeItem>[];
   bool loading = true;
   String? loadError;
-  final repository =
-      WardrobeRepository(ApiClient(baseUrl: AppConfig.apiBaseUrl));
+  late final client = widget.client ?? ApiClient(baseUrl: AppConfig.apiBaseUrl);
+  late final repository = WardrobeRepository(client);
+  late final displayRepository = WardrobeDisplayRepository(client);
 
   @override
   void initState() {
@@ -35,7 +41,10 @@ class _WardrobePageState extends State<WardrobePage> {
 
   Future<void> _loadItems() async {
     try {
-      final rows = await repository.fetchItems();
+      final responses = await Future.wait<dynamic>(
+          [repository.fetchItems(), displayRepository.fetch()]);
+      final rows = responses[0] as List<dynamic>;
+      final preferences = responses[1] as WardrobeDisplayPreferences;
       final loaded = <WardrobeItem>[];
       for (final row in rows) {
         final uri = (row["cutoutImageUrl"] as String?)?.isNotEmpty == true
@@ -53,6 +62,13 @@ class _WardrobePageState extends State<WardrobePage> {
       }
       if (mounted) {
         setState(() {
+          display = preferences;
+          if (!categories.contains(category)) category = "全部";
+          if (season != null &&
+              display.seasons.isNotEmpty &&
+              !display.seasons.contains(season)) {
+            season = null;
+          }
           items
             ..clear()
             ..addAll(loaded);
@@ -78,9 +94,11 @@ class _WardrobePageState extends State<WardrobePage> {
 
   List<WardrobeItem> get visibleItems => items.where((item) {
         final q = search.text.trim().toLowerCase();
-        return (category == "全部" || item.category == category) &&
+        return display.matches(item.data) &&
+            (category == "全部" || item.category == category) &&
             (season == null ||
-                (item.data["seasons"] as String? ?? "[]").contains(season!)) &&
+                WardrobeDisplayPreferences.itemSeasons(item.data["seasons"])
+                    .contains(season!)) &&
             (q.isEmpty ||
                 item.name.toLowerCase().contains(q) ||
                 item.color.contains(q));
@@ -101,9 +119,14 @@ class _WardrobePageState extends State<WardrobePage> {
                     Text("我的衣橱",
                         style: Theme.of(context).textTheme.headlineMedium),
                     const SizedBox(height: 4),
+                    Text(display.summary),
                     Text("共 ${visibleItems.length} 件单品",
                         style: const TextStyle(color: Color(0xFF8B867F)))
                   ])),
+              IconButton(
+                  onPressed: loading ? null : _editDisplay,
+                  icon: const Icon(Icons.settings_outlined),
+                  tooltip: "衣橱显示设置"),
               IconButton.filledTonal(
                   onPressed: _showAddChoices,
                   icon: const Icon(Icons.add),
@@ -180,6 +203,17 @@ class _WardrobePageState extends State<WardrobePage> {
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12))),
       ]));
+
+  Future<void> _editDisplay() async {
+    final saved = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+            builder: (_) =>
+                WardrobeDisplaySettingsPage(repository: displayRepository)));
+    if (saved == true && mounted) {
+      await _loadItems();
+    }
+  }
 
   Future<void> _showAddChoices() async {
     final source = await showModalBottomSheet<String>(
@@ -316,7 +350,9 @@ class _WardrobePageState extends State<WardrobePage> {
                 const SizedBox(height: 8),
                 Wrap(
                     spacing: 8,
-                    children: ["春", "夏", "秋", "冬"]
+                    children: (display.seasons.isEmpty
+                            ? WardrobeDisplayPreferences.allSeasons
+                            : display.seasons)
                         .map((value) => ChoiceChip(
                             label: Text(value),
                             selected: season == value,

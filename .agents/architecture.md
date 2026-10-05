@@ -27,3 +27,6 @@ Flutter 通过 API 操作当前用户数据；后端负责鉴权、数据库、A
 
 ## 2026-10-05 今日 AI 搭配
 导航不再包含 AI/今日双页签；我的搭配 AI 按钮也进入 TodayRecommendationPage。移除 ai_stylist 前端领域与通用 AI 生成流，只保留今日生成与共享保存。weather 领域负责 Open-Meteo HTTP 查询和天气契约，recommendation 装配天气与 AI。Flutter 使用 Geolocator 前台获取设备坐标；后台不获取定位，不以资料城市代替。
+
+## 2026-10-05 衣橱显示设置
+wardrobe 领域新增 WardrobeDisplayPreferences 模型、WardrobeDisplayRepository 与独立设置页，复用 ApiClient；个人中心和衣橱均进入该设置页。服务端 profile 持久化账号偏好，衣橱加载时读取本人设置和衣物，类型/季节筛选及分类按钮统一应用偏好。仅控制列表显示，组合编辑、已保存搭配、AI 不受影响。
