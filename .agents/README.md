@@ -25,7 +25,7 @@
 | app/ | 依赖 | `flutter pub get` | pubspec 已存在，本次不更新依赖 |
 | app/ | 开发 | `flutter run -d web-server --web-hostname=0.0.0.0 --web-port=8080` | 命令存在；需 app/.env，本次不启动 |
 | app/ | 验证 | `flutter analyze --no-pub`、`flutter test --no-pub` | 本次结果见 testing.md |
-| app/ | 构建 | `flutter build web --release` | 本次未构建生产包 |
+| app/ | 构建 | `flutter build web --release`、`flutter build apk --release --no-pub` | Android release APK 已构建，当前为 USB 测试接口，详见 testing.md |
 
 WSL 使用 Linux Flutter，不能调用 `/mnt/d/flutter` 的 Windows 脚本。当前环境 Linux SDK 位于 `$HOME/snap/flutter/common/flutter/bin`；Go Snap 包装器受限时可使用 `/snap/go/current/bin/go`。这些路径是当前环境事实，不是所有开发者的固定要求。
 本机 WebSocket 被代理干扰时，仅对此次命令去掉大小写的 HTTP_PROXY、HTTPS_PROXY、ALL_PROXY，并设置 NO_PROXY/no_proxy 为 localhost,127.0.0.1,::1。不要输出代理 URL 中的凭据或自动改系统代理。

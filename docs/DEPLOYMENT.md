@@ -133,3 +133,10 @@ pg_dump -h 127.0.0.1 -p 5432 -U ai_closet -d ai_closet -W > ai_closet_backup.sql
 Web 定位需要 HTTPS 或 localhost；通过局域网 HTTP IP 打开的手机浏览器不能验证定位，应改用 HTTPS。Nginx 模板仍需按实际域名配置 TLS。定位失败不会改用个人资料城市或默认天气。
 平台目录由 Flutter 本地生成且不提交。新环境执行 flutter create --platforms=android,web,linux . 后，在项目根执行 python3 tools/configure_location.py，配置 Android 前台粗略定位权限；现有本地 Android 清单已配置，不增加后台定位。iOS 工程仍未建立；在 macOS 生成后运行同一脚本配置 NSLocationWhenInUseUsageDescription 和 geolocator_apple 的 BYPASS_PERMISSION_LOCATION_ALWAYS=1，再进行真机验收。参考 [定位插件权限说明](https://pub.dev/packages/geolocator)。
 验收时允许定位，确认坐标、天气、当地日期显示正确；再测试拒绝权限、关闭定位、天气网络失败与重试，最后保存今日穿搭，核对天气及日期。
+
+## 2026-10-05 Android APK 构建
+已执行 flutter build apk --release --no-pub，原始产物为 app/build/app/outputs/flutter-apk/app-release.apk，交付副本为 app/build/installers/ai-closet-0.1.0-usb-test.apk。版本 0.1.0（versionCode 1），包名 com.example.ai_closet_app，最低 Android 7.0（API 24），包含 arm64-v8a/armeabi-v7a/x86_64，大小 53,609,447 字节。使用现有本地 debug keystore 签署 release 构建，APK v2 签名验证通过，供个人安装测试，不是商店发布签名。网络及前台粗略定位权限已核验。
+当前包仅内置公开 API_BASE_URL=http://localhost:3000，手机安装后该地址指手机自身；USB 本机测试需手机开启 USB 调试、连接电脑并执行 adb reverse tcp:3000 tcp:3000，后端仍需按已有部署流程另行运行。本次没有启动后端、修改远端数据库或实际安装到手机。离开 USB 使用前需提供手机可访问的后端绝对地址，更新 app/.env 并重新构建；Web 的 /api 相对地址不能直接用作原生 APK 后端地址。
+将 APK 传到手机并打开，按系统提示允许该来源安装。现有旧包若签名不同，不能直接覆盖；不要为了安装擅自清除已有应用数据。后续覆盖更新应继续使用同一签名，并递增 pubspec.yaml 的版本号。
+构建时使用 Flutter 3.47.1、Dart 3.13.1、Java 17、Android SDK 36；Flutter 平台目录本地生成不提交，新环境应核对 release Manifest 的 INTERNET 权限及需要 HTTP 测试时的 usesCleartextTraffic 配置，再运行 python3 tools/configure_location.py 配置前台定位权限。
+交付副本 SHA-256：0a2cca084cfe47cfca70177bd20830a6e88aa025d490e34d68f27d39c4e3d5b4。

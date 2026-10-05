@@ -34,3 +34,9 @@
 - Flutter analyze --no-pub 无问题，flutter test --no-pub 22 项通过；新增类型与多季节组合匹配、四季/历史标签、设置保存与实际列表/分类入口过滤、重进持久化、失败保留选择、恢复全部、加载失败重试验证。
 - 初次分析发现新增代码括号风格问题，修正后复验通过。结构检查与 git diff --check 通过，AGENTS.md 实测 45 行，维护源码均不超过 500 行。
 - 未启动真实服务、执行真实 PostgreSQL 迁移、生产构建、部署或真机/客户验收。
+
+## 2026-10-05 Android 安装包构建验证
+- Flutter doctor 确认 Android SDK 36、Java 17 和许可证就绪，flutter build apk --release --no-pub 成功，原产物 53,609,447 字节；交付副本 app/build/installers/ai-closet-0.1.0-usb-test.apk。
+- apksigner verify --verbose 通过（v2，单签名）；aapt 核验包名 com.example.ai_closet_app、0.1.0/1、minSdk 24、targetSdk 36、三种 ABI、INTERNET/ACCESS_COARSE_LOCATION 权限。使用本地已有测试签名。
+- 解包确认只包含公开 API_BASE_URL=http://localhost:3000；适用于 adb reverse 的 USB 本机测试。独立联网地址待用户提供，未声称手机业务可独立连通。
+- 无源码行为更改，沿用上一任务已通过的 Go test/vet、Flutter analyze 与 22 项测试；本次新增 APK 编译/签名/包内容检查。未启动真实后端、部署、安装到手机或执行真机验收。结构检查与 diff --check 通过，AGENTS.md 45 行。
