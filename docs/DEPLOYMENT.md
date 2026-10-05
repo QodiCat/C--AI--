@@ -140,3 +140,8 @@ Web 定位需要 HTTPS 或 localhost；通过局域网 HTTP IP 打开的手机�
 将 APK 传到手机并打开，按系统提示允许该来源安装。现有旧包若签名不同，不能直接覆盖；不要为了安装擅自清除已有应用数据。后续覆盖更新应继续使用同一签名，并递增 pubspec.yaml 的版本号。
 构建时使用 Flutter 3.47.1、Dart 3.13.1、Java 17、Android SDK 36；Flutter 平台目录本地生成不提交，新环境应核对 release Manifest 的 INTERNET 权限及需要 HTTP 测试时的 usesCleartextTraffic 配置，再运行 python3 tools/configure_location.py 配置前台定位权限。
 交付副本 SHA-256：0a2cca084cfe47cfca70177bd20830a6e88aa025d490e34d68f27d39c4e3d5b4。
+
+## 2026-10-05 指定服务器版 Android APK
+用户指定服务器 115.25.46.153，沿用现有后端 PORT=3000，将忽略的 app/.env 改为 API_BASE_URL=http://115.25.46.153:3000，重新执行 flutter build apk --release --no-pub。交付文件 app/build/installers/ai-closet-0.1.0-server.apk，大小 53,609,451 字节，APK v2 签名通过，包内仅含该公开接口地址；沿用先前版本、ABI、minSdk 与测试签名，不再需要 adb reverse。USB 测试包副本保留。
+健康路径检查未通过：直连 :3000/health 连接失败，/api/health 返回 404；不能宣称服务器已就绪或已部署。用户部署后需运行当前后端源码（包含新增接口与 AutoMigrate 列）并确保手机可访问 3000 端口；若改用 Nginx /api 或 HTTPS，应相应修改 app/.env 再构建。该 APK 为指定 IP/HTTP 的安装测试包，正式公网部署仍按 HTTPS 要求配置。
+SHA-256：94be269c21ec8aea112cc2954ed83a20e9c56e4b4590e1817dd7a01653ed41e9。本次未登录服务器、启动后端、修改防火墙/数据库或实际安装到手机。

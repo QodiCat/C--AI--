@@ -40,3 +40,9 @@
 - apksigner verify --verbose 通过（v2，单签名）；aapt 核验包名 com.example.ai_closet_app、0.1.0/1、minSdk 24、targetSdk 36、三种 ABI、INTERNET/ACCESS_COARSE_LOCATION 权限。使用本地已有测试签名。
 - 解包确认只包含公开 API_BASE_URL=http://localhost:3000；适用于 adb reverse 的 USB 本机测试。独立联网地址待用户提供，未声称手机业务可独立连通。
 - 无源码行为更改，沿用上一任务已通过的 Go test/vet、Flutter analyze 与 22 项测试；本次新增 APK 编译/签名/包内容检查。未启动真实后端、部署、安装到手机或执行真机验收。结构检查与 diff --check 通过，AGENTS.md 45 行。
+
+## 2026-10-05 指定服务器 APK 复验
+- 用户提供 115.25.46.153，沿用后端现有 3000 端口更新公开客户端配置；flutter build apk --release --no-pub 成功，交付 app/build/installers/ai-closet-0.1.0-server.apk（53,609,451 字节）。
+- apksigner verify --verbose 通过（v2）；解包断言只包含 API_BASE_URL=http://115.25.46.153:3000。无源码行为变更，无依赖升级；已有 USB 测试副本保留。
+- 只读健康探测失败：直接 :3000/health 连接错误，/api/health 返回 404。未声称线上服务可用；未登录服务器、部署、启动后端、修改数据库或真机安装。
+- 结构检查和 diff --check 通过，AGENTS.md 实测 45 行。
