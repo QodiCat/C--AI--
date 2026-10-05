@@ -22,6 +22,7 @@ import (
 	"ai-closet-server/internal/modules/profile"
 	"ai-closet-server/internal/modules/recommendation"
 	"ai-closet-server/internal/modules/wearlog"
+	"ai-closet-server/internal/modules/weather"
 )
 
 type App struct {
@@ -91,7 +92,7 @@ func newApp(sender auth.MailSender) (*App, error) {
 	imageprocess.RegisterRoutes(router, db, imageprocess.NewProcessor(cfg), cfg)
 	outfit.RegisterRoutes(router, db)
 	profile.RegisterRoutes(router, db)
-	recommendation.RegisterRoutes(router, aiService)
+	recommendation.RegisterRoutes(router, aiService, weather.New(cfg.WeatherBaseURL))
 	wearlog.RegisterRoutes(router, db)
 	oss.RegisterRoutes(router, cfg)
 

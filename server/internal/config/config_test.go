@@ -43,3 +43,14 @@ func TestDatabaseURLFromPostgresVariables(t *testing.T) {
 		t.Fatal("DATABASE_URL must take priority")
 	}
 }
+
+func TestWeatherBaseURL(t *testing.T) {
+	t.Setenv("WEATHER_BASE_URL", "")
+	if Read().WeatherBaseURL != "https://api.open-meteo.com/v1/forecast" {
+		t.Fatal("missing default weather endpoint")
+	}
+	t.Setenv("WEATHER_BASE_URL", "https://weather.example.com/v1/forecast")
+	if Read().WeatherBaseURL != "https://weather.example.com/v1/forecast" {
+		t.Fatal("weather endpoint ignores configuration")
+	}
+}

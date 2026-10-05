@@ -3,14 +3,24 @@ package bootstrap
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"regexp"
 	"testing"
+	"time"
 )
 
 func TestCoreMVPFlow(t *testing.T) {
+	weatherServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		now := time.Now().In(time.FixedZone("Asia/Shanghai", 8*3600))
+		fmt.Fprintf(w, `{"timezone":"Asia/Shanghai","current":{"time":"%s","temperature_2m":24,"apparent_temperature":25,"weather_code":0,"wind_speed_10m":10},"daily":{"time":["%s"],"temperature_2m_min":[18],"temperature_2m_max":[26]}}`, now.Format("2006-01-02T15:04"), now.Format("2006-01-02"))
+	}))
+	defer weatherServer.Close()
+	t.Setenv("WEATHER_BASE_URL", weatherServer.URL)
+
 	t.Setenv("AI_PROVIDER", "mock")
 	t.Setenv("SEED_DEMO_DATA", "true")
 	t.Setenv("APP_ENV", "test")
@@ -30,8 +40,8 @@ func TestCoreMVPFlow(t *testing.T) {
 		t.Fatalf("expected seeded wardrobe, got %#v", items)
 	}
 
-	generated := call(t, app, http.MethodPost, "/ai/outfits/generate", map[string]any{"scene": "通勤", "season": "秋", "weather": "晴", "temperature": "24", "preferredStyle": "极简"}, token)
-	candidates := generated["data"].([]any)
+	generated := call(t, app, http.MethodPost, "/ai/today-recommendation/generate", map[string]any{"scene": "通勤", "latitude": 31.23, "longitude": 121.47}, token)
+	candidates := generated["data"].(map[string]any)["candidates"].([]any)
 	if len(candidates) != 3 {
 		t.Fatalf("expected three candidates, got %d", len(candidates))
 	}

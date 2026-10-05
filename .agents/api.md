@@ -21,3 +21,6 @@ GET /outfits 支持 source 与 category 精确筛选；category 显式空值表�
 
 ## 2026-10-05 身体数据
 GET /me 返回 height、weight、bust、hip、waist、shoulderWidth、thighCircumference、legLength、torsoLength。PATCH /me/body-measurements 接收数字对象，仅更新已传字段，0 清除，范围 0–300；长度 cm、体重 kg。拒绝空对象及未知字段，仅操作本人。基础资料 PATCH 未传 height/weight 时保留原值。
+
+## 2026-10-05 今日 AI 搭配
+移除 POST /ai/outfits/generate；保存 /ai/outfits/save 保留，旧 AI 搭配不删除。POST /ai/today-recommendation/generate 改为 {latitude:number,longitude:number,scene:string}；经登录认证后校验坐标范围，后端查天气再调用 AI。旧 weather/temperature 不能替代服务端查询；未传坐标返回 400，天气失败返回 502 WEATHER_UNAVAILABLE。返回 data:{candidates:[...],weather:{latitude,longitude,date,time,timezone,weather,temperature,feelsLike,minimum,maximum,wind}}。单位温度 °C、风速 km/h；查询及返回坐标四舍五入到三位小数。天气日期须匹配当地今天，当前天气超过三小时、超前超过半小时或字段缺失均拒绝。

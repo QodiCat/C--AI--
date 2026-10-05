@@ -1,21 +1,25 @@
 import "package:flutter/material.dart";
+import "../data/current_location.dart";
 import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
 import "../../outfits/presentation/outfit_images.dart";
 import "../data/today_recommendation_repository.dart";
 
 class TodayRecommendationPage extends StatefulWidget {
-  const TodayRecommendationPage({super.key});
+  const TodayRecommendationPage(
+      {super.key, this.client, this.locate = currentLocation});
+  final ApiClient? client;
+  final Future<Coordinates> Function() locate;
   @override
   State<TodayRecommendationPage> createState() =>
       _TodayRecommendationPageState();
 }
 
 class _TodayRecommendationPageState extends State<TodayRecommendationPage> {
-  final client = ApiClient(baseUrl: AppConfig.apiBaseUrl);
+  late final client = widget.client ?? ApiClient(baseUrl: AppConfig.apiBaseUrl);
   late final catalog = OutfitCatalog(client);
-  final weather = TextEditingController();
-  final temperature = TextEditingController();
+  Map<String, dynamic>? conditions;
+  String recommendationScene = "通勤";
   final scene = TextEditingController(text: "通勤");
   List<dynamic> candidates = [];
   int look = 0;
@@ -23,32 +27,32 @@ class _TodayRecommendationPageState extends State<TodayRecommendationPage> {
   String? error;
   @override
   void dispose() {
-    weather.dispose();
-    temperature.dispose();
     scene.dispose();
     super.dispose();
   }
 
   Future<void> generate() async {
-    if (weather.text.trim().isEmpty ||
-        temperature.text.trim().isEmpty ||
-        scene.text.trim().isEmpty) {
-      setState(() => error = "请填写实际天气、温度和场景");
+    if (scene.text.trim().isEmpty) {
+      setState(() => error = "请选择穿搭场景");
       return;
     }
     setState(() {
       loading = true;
       error = null;
+      candidates = [];
+      conditions = null;
     });
     try {
+      final location = await widget.locate();
+      final requestedScene = scene.text.trim();
       final result = await TodayRecommendationRepository(client)
           .generateTodayRecommendation(
-              weather: weather.text.trim(),
-              temperature: temperature.text.trim(),
-              scene: scene.text.trim());
+              location: location, scene: requestedScene);
       if (mounted) {
         setState(() {
-          candidates = result;
+          candidates = result["candidates"] as List<dynamic>;
+          conditions = result["weather"] as Map<String, dynamic>;
+          recommendationScene = requestedScene;
           look = 0;
         });
       }
@@ -83,15 +87,13 @@ class _TodayRecommendationPageState extends State<TodayRecommendationPage> {
     try {
       final saved = await client.post("/ai/outfits/save",
           body: Map<String, dynamic>.from(candidates[look] as Map));
-      final now = DateTime.now();
-      final date =
-          "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+      final date = conditions!["date"] as String;
       await client.post("/wear-logs", body: {
         "outfitId": saved["data"]["id"],
         "wearDate": date,
-        "weather": weather.text.trim(),
-        "temperature": temperature.text.trim(),
-        "scene": scene.text.trim()
+        "weather": conditions!["weather"],
+        "temperature": conditions!["temperature"].toString(),
+        "scene": recommendationScene
       });
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -110,25 +112,36 @@ class _TodayRecommendationPageState extends State<TodayRecommendationPage> {
               key: const ValueKey("today-recommendation-page"),
               padding: const EdgeInsets.all(20),
               children: [
-            Text("今日穿搭推荐", style: Theme.of(context).textTheme.headlineMedium),
+            Text("今日 AI 搭配", style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 8),
-            const Text("填写当前天气，从你的真实衣橱中生成搭配"),
-            TextField(
-                controller: weather,
-                decoration: const InputDecoration(labelText: "当前天气")),
-            TextField(
-                controller: temperature,
-                keyboardType: const TextInputType.numberWithOptions(
-                    signed: true, decimal: true),
-                decoration: const InputDecoration(labelText: "温度 °C")),
+            const Text("点击生成后获取当前位置与天气，从你的衣橱中推荐今日搭配"),
+            if (conditions != null)
+              Card(
+                  child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                "当前位置：${conditions!["latitude"]}, ${conditions!["longitude"]}"),
+                            Text(
+                                "${conditions!["date"]} · ${conditions!["timezone"]}"),
+                            Text(
+                                "${conditions!["weather"]} · 当前 ${conditions!["temperature"]}°C · 体感 ${conditions!["feelsLike"]}°C"),
+                            Text(
+                                "今日 ${conditions!["minimum"]}–${conditions!["maximum"]}°C · 风速 ${conditions!["wind"]} km/h"),
+                            Text("天气时间：${conditions!["time"]}"),
+                            const Text("天气数据：Open-Meteo"),
+                          ]))),
             TextField(
                 controller: scene,
+                enabled: !loading,
                 decoration: const InputDecoration(labelText: "穿搭场景")),
             const SizedBox(height: 16),
             FilledButton.icon(
                 onPressed: loading ? null : generate,
                 icon: const Icon(Icons.auto_awesome),
-                label: Text(loading ? "处理中…" : "生成今日推荐")),
+                label: Text(loading ? "定位并生成中…" : "获取天气并生成今日搭配")),
             if (error != null)
               Padding(padding: const EdgeInsets.all(12), child: Text(error!)),
             if (candidates.isNotEmpty)

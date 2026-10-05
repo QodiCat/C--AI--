@@ -21,16 +21,9 @@ type OutfitCandidate struct {
 	Reason  string   `json:"reason"`
 }
 
-type OutfitInput struct {
-	Scene          string
-	Season         string
-	Weather        string
-	Temperature    string
-	PreferredStyle string
-	Items          []models.Item
-}
-
 type TodayInput struct {
+	Location    string
+	Date        string
 	Weather     string
 	Temperature string
 	Scene       string
@@ -38,7 +31,6 @@ type TodayInput struct {
 }
 
 type Provider interface {
-	GenerateOutfits(input OutfitInput) ([]OutfitCandidate, error)
 	GenerateToday(input TodayInput) ([]OutfitCandidate, error)
 }
 
@@ -61,10 +53,6 @@ func NewProvider(cfg config.Config) Provider {
 
 type MockProvider struct{}
 
-func (MockProvider) GenerateOutfits(input OutfitInput) ([]OutfitCandidate, error) {
-	return buildCandidates(input.Scene, input.Season, input.PreferredStyle, input.Temperature, input.Items), nil
-}
-
 func (MockProvider) GenerateToday(input TodayInput) ([]OutfitCandidate, error) {
 	return buildCandidates(input.Scene, "当季", "今日推荐", input.Temperature, input.Items), nil
 }
@@ -75,22 +63,11 @@ type HTTPProvider struct {
 	Client  *http.Client
 }
 
-func (provider HTTPProvider) GenerateOutfits(input OutfitInput) ([]OutfitCandidate, error) {
-	requestBody := map[string]any{
-		"scene":          input.Scene,
-		"season":         input.Season,
-		"weather":        input.Weather,
-		"temperature":    input.Temperature,
-		"preferredStyle": input.PreferredStyle,
-		"items":          input.Items,
-	}
-
-	return provider.post("/outfits/generate", requestBody)
-}
-
 func (provider HTTPProvider) GenerateToday(input TodayInput) ([]OutfitCandidate, error) {
 	requestBody := map[string]any{
 		"scene":       input.Scene,
+		"location":    input.Location,
+		"date":        input.Date,
 		"weather":     input.Weather,
 		"temperature": input.Temperature,
 		"items":       input.Items,

@@ -22,3 +22,9 @@
 - Flutter analyze --no-pub 无问题；flutter test --no-pub 15 项通过，新增回填、输入校验、清空请求、保存失败保留输入测试。
 - 初次工具因缓存只读失败，经审批使用 SDK 缓存复验；页面测试调整焦点与滚动等待后通过。结构检查和 diff --check 通过，根 AGENTS.md 实测 45 行。
 - 未启动真实服务、迁移 PostgreSQL、构建生产包、调用收费 AI 或进行真机/客户验收。
+
+## 2026-10-05 今日 AI 搭配验证
+- Go 全套 go test ./...、go vet ./... 通过；覆盖坐标校验、零坐标、鉴权/用户衣物隔离、手填天气不能覆盖服务端结果、天气失败阻断 AI、旧生成路由 404、天气代码/缺失/null/非法/过期数据、HTTP 错误、取消及配置覆盖。核心端到端流改为自动天气今日生成，保留保存与穿搭记录回归。
+- Flutter analyze --no-pub 无问题；flutter test --no-pub 18 项通过，覆盖只保留场景输入、获取设备坐标、天气展示、失败重试、当地日期/天气一致的记录；flutter build web --release --no-pub 通过。
+- 使用公开示例坐标验证 Open-Meteo 真实接口连通与字段格式；无用户定位数据或收费 AI 调用。Android 前台粗略定位清单已由 tools/configure_location.py 配置；iOS 工程未生成。
+- 结构与 git diff --check 通过，AGENTS.md 实测 45 行。未启动真实服务、部署、迁移数据库、构建 Android/iOS 或验证真机 GPS/浏览器权限/客户验收。

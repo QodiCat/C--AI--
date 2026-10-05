@@ -22,31 +22,6 @@ func NewService(db *gorm.DB, provider Provider) *Service {
 	}
 }
 
-func (service *Service) GenerateOutfits(userID string, input OutfitInput) ([]OutfitCandidate, error) {
-	items, err := service.availableItems(userID)
-	if err != nil {
-		return nil, err
-	}
-	if len(items) < 2 {
-		return nil, fmt.Errorf("current wearable items are insufficient")
-	}
-
-	input.Items = items
-	task, err := service.createTask(userID, "outfit_generation", input)
-	if err != nil {
-		return nil, err
-	}
-
-	candidates, err := service.provider.GenerateOutfits(input)
-	if err != nil {
-		service.failTask(task, err)
-		return nil, err
-	}
-
-	service.completeTask(task, candidates)
-	return candidates, nil
-}
-
 func (service *Service) GenerateToday(userID string, input TodayInput) ([]OutfitCandidate, error) {
 	items, err := service.availableItems(userID)
 	if err != nil {

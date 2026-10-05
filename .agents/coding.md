@@ -20,3 +20,5 @@ Go 保持现有 cmd/internal/modules/infrastructure 分层，使用 gofmt；Dart
 现有 MockProvider 仅显式测试/开发使用，生产禁止；不得用模拟图片或 AI 结果替代真实失败。
 行为变化必须覆盖成功、失败和必要隔离测试；纯拆分沿用回归测试证明行为未变。
 [代码风格原始参考](../docs/优秀代码风格.md)保留一般原则与历史示例；具体项目规则以本文件为现行位置。
+
+天气配置新增 server/.env 的 WEATHER_BASE_URL，默认 Open-Meteo forecast 固定协议端点；示例同步，客户端无天气凭据。新增 geolocator 14.1.1 及平台依赖，保留既有依赖版本。生成平台后执行 tools/configure_location.py 配置原生定位权限；不提交本地生成的平台工程。

@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 
-import "../ai_stylist/presentation/ai_stylist_page.dart";
 import "../profile/presentation/profile_page.dart";
 import "../today_recommendation/presentation/today_recommendation_page.dart";
 import "../wardrobe/presentation/wardrobe_page.dart";
@@ -22,7 +21,7 @@ class _AppShellPageState extends State<AppShellPage> {
   Widget build(BuildContext context) {
     final pages = [
       const WardrobePage(),
-      const OutfitRecommendationPage(),
+      const TodayRecommendationPage(),
       const MyOutfitsPage(),
       const WearHistoryPage(),
       ProfilePage(onLogout: widget.onLogout),
@@ -45,7 +44,7 @@ class _AppShellPageState extends State<AppShellPage> {
           NavigationDestination(
             icon: Icon(Icons.auto_awesome_outlined),
             selectedIcon: Icon(Icons.auto_awesome),
-            label: "搭配推荐",
+            label: "今日 AI 搭配",
           ),
           NavigationDestination(
             icon: Icon(Icons.collections_bookmark_outlined),
@@ -66,17 +65,4 @@ class _AppShellPageState extends State<AppShellPage> {
       ),
     );
   }
-}
-
-class OutfitRecommendationPage extends StatelessWidget {
-  const OutfitRecommendationPage({super.key});
-  @override
-  Widget build(BuildContext context) => const DefaultTabController(
-      length: 2,
-      child: Column(children: [
-        TabBar(tabs: [Tab(text: "AI 搭配"), Tab(text: "今日推荐")]),
-        Expanded(
-            child: TabBarView(
-                children: [AiStylistPage(), TodayRecommendationPage()])),
-      ]));
 }

@@ -127,3 +127,9 @@ pg_dump -h 127.0.0.1 -p 5432 -U ai_closet -d ai_closet -W > ai_closet_backup.sql
 原有 SQLite 文件不会自动迁入 PostgreSQL，也不会被删除。默认连接到新的空数据库；如需迁移已有真实数据，应先备份并单独执行迁移，避免混入演示记录。
 
 官方参考：[商品分割](https://help.aliyun.com/en/viapi/developer-reference/api-i8iw3k)、[Qwen 兼容接口](https://help.aliyun.com/en/model-studio/qwen-api-via-openai-chat-completions)、[结构化输出](https://help.aliyun.com/en/model-studio/qwen-structured-output)、[手机浏览器拍照限制](https://pub.dev/packages/image_picker_for_web)。
+
+## 今日 AI 搭配的定位与天气
+后端新增 WEATHER_BASE_URL，默认 https://api.open-meteo.com/v1/forecast，模板见 server/.env.example；需要可访问天气接口及系统时区数据库。Open-Meteo 公共接口用于个人非商业使用；商业部署需使用相应订阅接口配置，不能把公共免费额度当作商业服务保证。参考 [天气接口与使用条款](https://open-meteo.com/en/docs)。
+Web 定位需要 HTTPS 或 localhost；通过局域网 HTTP IP 打开的手机浏览器不能验证定位，应改用 HTTPS。Nginx 模板仍需按实际域名配置 TLS。定位失败不会改用个人资料城市或默认天气。
+平台目录由 Flutter 本地生成且不提交。新环境执行 flutter create --platforms=android,web,linux . 后，在项目根执行 python3 tools/configure_location.py，配置 Android 前台粗略定位权限；现有本地 Android 清单已配置，不增加后台定位。iOS 工程仍未建立；在 macOS 生成后运行同一脚本配置 NSLocationWhenInUseUsageDescription 和 geolocator_apple 的 BYPASS_PERMISSION_LOCATION_ALWAYS=1，再进行真机验收。参考 [定位插件权限说明](https://pub.dev/packages/geolocator)。
+验收时允许定位，确认坐标、天气、当地日期显示正确；再测试拒绝权限、关闭定位、天气网络失败与重试，最后保存今日穿搭，核对天气及日期。

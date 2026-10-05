@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/app_config.dart';
-import '../../ai_stylist/presentation/ai_stylist_page.dart';
+import '../../today_recommendation/presentation/today_recommendation_page.dart';
 import 'outfit_images.dart';
 import 'outfit_editor_page.dart';
 
@@ -45,8 +45,8 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
     await Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => ai
             ? Scaffold(
-                appBar: AppBar(title: const Text('AI 生成搭配')),
-                body: const AiStylistPage())
+                appBar: AppBar(title: const Text('今日 AI 搭配')),
+                body: TodayRecommendationPage(client: client))
             : OutfitEditorPage(client: client, categories: categories)));
     if (mounted) await load();
   }
@@ -112,7 +112,7 @@ class _MyOutfitsPageState extends State<MyOutfitsPage> {
               OutlinedButton.icon(
                   onPressed: () => add(true),
                   icon: const Icon(Icons.auto_awesome),
-                  label: const Text('AI 生成')),
+                  label: const Text('今日 AI 搭配')),
             ]),
             const SizedBox(height: 16),
             Wrap(spacing: 8, runSpacing: 8, children: [

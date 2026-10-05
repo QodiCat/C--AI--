@@ -9,7 +9,7 @@
 - server/internal/infrastructure/：PostgreSQL/测试 SQLite、邮件和 Qwen 适配；models/ 为 GORM 数据模型，httpapi/ 为响应契约。
 - app/lib/core/：网络、登录会话、公开配置和基础主题；features/ 按认证、衣橱、搭配、推荐、记录和个人资料组织。
 - app/lib/features/wardrobe/models/：衣物展示模型；presentation/ 的列表、上传处理、识别确认、详情和批量处理分别独立。
-- app/lib/features/outfits/：我的搭配列表/分类筛选、独立新增/编辑组合页面与所有单品图片展示。AI 与今日推荐合并在导航页，接口领域仍各自保留。
+- app/lib/features/outfits/：我的搭配列表/分类筛选、独立新增/编辑组合页面与所有单品图片展示。今日 AI 搭配为唯一推荐入口，原双页签在 2026-10-05 被替代。
 - .agents/：现行工程规则；docs/：产品资料、源码部署、人类交付和明确标注的历史方案；UI设计图/：原始视觉资料。
 
 ## 核心边界
@@ -24,3 +24,6 @@ Flutter 通过 API 操作当前用户数据；后端负责鉴权、数据库、A
 - 历史技术文档保留 SQLite 方案等设计，不是当前架构。其独有设计信息不删除，也不当作已实现事实。
 
 个人资料新增独立身体数据编辑页面及 /me/body-measurements 接口，复用 User 与 ProfileRepository；围度暂不参与 AI 推荐。
+
+## 2026-10-05 今日 AI 搭配
+导航不再包含 AI/今日双页签；我的搭配 AI 按钮也进入 TodayRecommendationPage。移除 ai_stylist 前端领域与通用 AI 生成流，只保留今日生成与共享保存。weather 领域负责 Open-Meteo HTTP 查询和天气契约，recommendation 装配天气与 AI。Flutter 使用 Geolocator 前台获取设备坐标；后台不获取定位，不以资料城市代替。

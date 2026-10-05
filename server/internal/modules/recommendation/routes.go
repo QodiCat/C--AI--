@@ -1,6 +1,10 @@
 package recommendation
 
 import (
+	"ai-closet-server/internal/modules/weather"
+	"context"
+	"fmt"
+	"math"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,14 +13,6 @@ import (
 	"ai-closet-server/internal/modules/ai"
 	"ai-closet-server/internal/modules/auth"
 )
-
-type generateOutfitsRequest struct {
-	Scene          string `json:"scene" binding:"required"`
-	Season         string `json:"season" binding:"required"`
-	Weather        string `json:"weather" binding:"required"`
-	Temperature    string `json:"temperature" binding:"required"`
-	PreferredStyle string `json:"preferredStyle" binding:"required"`
-}
 
 type saveOutfitRequest struct {
 	Name    string   `json:"name" binding:"required"`
@@ -28,9 +24,12 @@ type saveOutfitRequest struct {
 }
 
 type todayRecommendationRequest struct {
-	Weather     string `json:"weather" binding:"required"`
-	Temperature string `json:"temperature" binding:"required"`
-	Scene       string `json:"scene" binding:"required"`
+	Latitude  *float64 `json:"latitude" binding:"required"`
+	Longitude *float64 `json:"longitude" binding:"required"`
+	Scene     string   `json:"scene" binding:"required"`
+}
+type WeatherProvider interface {
+	Fetch(context.Context, float64, float64) (weather.Snapshot, error)
 }
 
 type replaceItemRequest struct {
@@ -42,29 +41,7 @@ type feedbackRequest struct {
 	Feedback      string `json:"feedback" binding:"required,oneof=like dislike"`
 }
 
-func RegisterRoutes(router *gin.Engine, service *ai.Service) {
-	router.POST("/ai/outfits/generate", func(c *gin.Context) {
-		var req generateOutfitsRequest
-		if err := c.ShouldBindJSON(&req); err != nil {
-			httpapi.Error(c, http.StatusBadRequest, "INVALID_REQUEST", "请求参数不合法")
-			return
-		}
-
-		result, err := service.GenerateOutfits(auth.CurrentUserID(c), ai.OutfitInput{
-			Scene:          req.Scene,
-			Season:         req.Season,
-			Weather:        req.Weather,
-			Temperature:    req.Temperature,
-			PreferredStyle: req.PreferredStyle,
-		})
-		if err != nil {
-			httpapi.Error(c, http.StatusBadGateway, "AI_GENERATION_FAILED", err.Error())
-			return
-		}
-
-		httpapi.OK(c, result)
-	})
-
+func RegisterRoutes(router *gin.Engine, service *ai.Service, weatherProvider WeatherProvider) {
 	router.POST("/ai/outfits/save", func(c *gin.Context) {
 		var req saveOutfitRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -95,17 +72,29 @@ func RegisterRoutes(router *gin.Engine, service *ai.Service) {
 			return
 		}
 
+		lat, lon := *req.Latitude, *req.Longitude
+		if math.IsNaN(lat) || math.IsNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180 {
+			httpapi.Error(c, 400, "INVALID_LOCATION", "当前位置不合法，请重新定位")
+			return
+		}
+		conditions, err := weatherProvider.Fetch(c.Request.Context(), lat, lon)
+		if err != nil {
+			httpapi.Error(c, 502, "WEATHER_UNAVAILABLE", "获取当前位置天气失败，请重试")
+			return
+		}
 		result, err := service.GenerateToday(auth.CurrentUserID(c), ai.TodayInput{
-			Weather:     req.Weather,
-			Temperature: req.Temperature,
+			Weather:     conditions.Weather,
+			Temperature: fmt.Sprintf("当前 %.1f°C，体感 %.1f°C，今日 %.1f–%.1f°C，风速 %.1f km/h", conditions.Temperature, conditions.FeelsLike, conditions.Minimum, conditions.Maximum, conditions.Wind),
 			Scene:       req.Scene,
+			Location:    conditions.Timezone,
+			Date:        conditions.Date,
 		})
 		if err != nil {
 			httpapi.Error(c, http.StatusBadGateway, "TODAY_RECOMMENDATION_FAILED", err.Error())
 			return
 		}
 
-		httpapi.OK(c, result)
+		httpapi.OK(c, gin.H{"candidates": result, "weather": conditions})
 	})
 
 	router.POST("/ai/outfits/replace-item", func(c *gin.Context) {
