@@ -10,6 +10,10 @@ class ProfileRepository {
         body: {"nickname": nickname, "city": city, "bodyType": bodyType});
   }
 
+  Future<void> updateBodyMeasurements(Map<String, double> values) async {
+    await client.patch("/me/body-measurements", body: values);
+  }
+
   Future<void> preferences(List<String> values) async {
     await client
         .patch("/me/style-preferences", body: {"stylePreferences": values});

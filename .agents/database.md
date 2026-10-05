@@ -15,3 +15,6 @@
 ## 2026-10-04 搭配分类迁移
 Outfit 新增 category 字符串列及普通索引，NOT NULL DEFAULT 空字符串；现有 AutoMigrate 在服务重启时执行，旧搭配默认未分类。分类按本人搭配值聚合，无独立分类表。仅在本地测试库验证，本次未对远端 PostgreSQL 执行迁移。应用回滚时可保留新增列，不要求删除历史数据。
 编辑保留 source、AIReason、rating 等不可编辑元数据；删除保留 wear_logs 和衣物，不自动清理关联历史，也不创建历史图片快照。
+
+## 2026-10-05 身体数据迁移
+User 新增 bust、hip、waist、shoulder_width、thigh_circumference、leg_length、torso_length 浮点列，NOT NULL DEFAULT 0，复用 height/weight。0 为未填写；启动 AutoMigrate 添加列，回滚可保留列。仅本地 SQLite 验证，未执行真实 PostgreSQL 迁移。

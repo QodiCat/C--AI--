@@ -15,6 +15,13 @@ type User struct {
 	AgeRange           string    `json:"ageRange"`
 	Height             float64   `json:"height"`
 	Weight             float64   `json:"weight"`
+	Bust               float64   `gorm:"not null;default:0" json:"bust"`
+	Hip                float64   `gorm:"not null;default:0" json:"hip"`
+	Waist              float64   `gorm:"not null;default:0" json:"waist"`
+	ShoulderWidth      float64   `gorm:"not null;default:0" json:"shoulderWidth"`
+	ThighCircumference float64   `gorm:"not null;default:0" json:"thighCircumference"`
+	LegLength          float64   `gorm:"not null;default:0" json:"legLength"`
+	TorsoLength        float64   `gorm:"not null;default:0" json:"torsoLength"`
 	StylePreferences   string    `json:"stylePreferences"`
 	AllowModelTraining bool      `json:"allowModelTraining"`
 	CreatedAt          time.Time `json:"createdAt"`

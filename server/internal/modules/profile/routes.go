@@ -13,14 +13,14 @@ import (
 )
 
 type updateProfileRequest struct {
-	Nickname  string  `json:"nickname"`
-	AvatarURL string  `json:"avatarUrl"`
-	City      string  `json:"city"`
-	BodyType  string  `json:"bodyType"`
-	Gender    string  `json:"gender"`
-	AgeRange  string  `json:"ageRange"`
-	Height    float64 `json:"height"`
-	Weight    float64 `json:"weight"`
+	Nickname  string   `json:"nickname"`
+	AvatarURL string   `json:"avatarUrl"`
+	City      string   `json:"city"`
+	BodyType  string   `json:"bodyType"`
+	Gender    string   `json:"gender"`
+	AgeRange  string   `json:"ageRange"`
+	Height    *float64 `json:"height"`
+	Weight    *float64 `json:"weight"`
 }
 
 type updatePreferencesRequest struct {
@@ -32,6 +32,7 @@ type updatePrivacyRequest struct {
 }
 
 func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
+	registerBodyMeasurements(router, db)
 	router.GET("/me", func(c *gin.Context) {
 		userID := auth.CurrentUserID(c)
 		var user models.User
@@ -63,8 +64,20 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		user.BodyType = req.BodyType
 		user.Gender = req.Gender
 		user.AgeRange = req.AgeRange
-		user.Height = req.Height
-		user.Weight = req.Weight
+		if req.Height != nil {
+			if *req.Height < 0 || *req.Height > 300 {
+				httpapi.Error(c, 400, "INVALID_MEASUREMENT", "身高须为 0 到 300")
+				return
+			}
+			user.Height = *req.Height
+		}
+		if req.Weight != nil {
+			if *req.Weight < 0 || *req.Weight > 300 {
+				httpapi.Error(c, 400, "INVALID_MEASUREMENT", "体重须为 0 到 300")
+				return
+			}
+			user.Weight = *req.Weight
+		}
 		user.UpdatedAt = time.Now()
 
 		if err := db.Save(&user).Error; err != nil {

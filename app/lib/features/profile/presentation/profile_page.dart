@@ -1,4 +1,6 @@
 import "dart:convert";
+import "body_measurements_page.dart";
+import "../data/profile_repository.dart";
 import "package:flutter/material.dart";
 import "../../../core/network/auth_session.dart";
 import "../../../core/network/api_client.dart";
@@ -258,6 +260,19 @@ class _ProfilePageState extends State<ProfilePage> {
                                 Text("搭配 $outfitCount"),
                                 Text("记录 $logCount")
                               ]))),
+                  ListTile(
+                      leading: const Icon(Icons.straighten),
+                      title: const Text("身体数据"),
+                      subtitle: const Text("身高、体重与围度"),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        final saved = await Navigator.of(context).push<bool>(
+                            MaterialPageRoute(
+                                builder: (_) => BodyMeasurementsPage(
+                                    profile: profile!,
+                                    repository: ProfileRepository(client))));
+                        if (saved == true && mounted) await load();
+                      }),
                   ListTile(
                       title: const Text("风格偏好"),
                       subtitle: Text(preferences.join(" · ")),

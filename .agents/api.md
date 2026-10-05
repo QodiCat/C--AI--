@@ -18,3 +18,6 @@
 注册验证码与重置验证码互相隔离；一次使用、10 分钟有效、60 秒发送间隔、5 次错误后失效；IP 配额共享。密码更新同时撤销会话。
 搭配 POST 与 PATCH 使用 name、itemIds（数组）、scene、style、season、category；PATCH 当前为编辑页提交的完整可编辑快照，要求非空名称及至少一件本人衣物，不接受重复/他人单品。来源、评分和 AI 原因不随编辑重置。
 GET /outfits 支持 source 与 category 精确筛选；category 显式空值表示未分类，未传则不按分类过滤。分类为最长 50 字符的自定义单分类，新增/编辑均可设置或清空。DELETE 仅删除当前用户的搭配；衣物和穿搭记录保留，历史记录可能显示已删除搭配。
+
+## 2026-10-05 身体数据
+GET /me 返回 height、weight、bust、hip、waist、shoulderWidth、thighCircumference、legLength、torsoLength。PATCH /me/body-measurements 接收数字对象，仅更新已传字段，0 清除，范围 0–300；长度 cm、体重 kg。拒绝空对象及未知字段，仅操作本人。基础资料 PATCH 未传 height/weight 时保留原值。
