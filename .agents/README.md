@@ -21,6 +21,7 @@
 | server/ | 依赖 | `go mod download` | 配置存在；本次不更新依赖 |
 | server/ | 开发 | `go run ./cmd/api` | 命令存在；需 PostgreSQL 与 server/.env，本次不启动 |
 | server/ | 测试/检查 | `go test ./...`、`go vet ./...` | 本次结果见 testing.md |
+| 根目录 | 后端更新 | `python3 tools/update_backend.py --dry-run`、`python3 tools/update_backend.py` | 预检不连接服务器；正式命令会远端编译并重启，需 SSH 与目标配置 |
 | server/ | 构建 | `go build -o bin/api ./cmd/api` | 本次未构建生产二进制 |
 | app/ | 依赖 | `flutter pub get` | pubspec 已存在，本次不更新依赖 |
 | app/ | 开发 | `flutter run -d web-server --web-hostname=0.0.0.0 --web-port=8080` | 命令存在；需 app/.env，本次不启动 |

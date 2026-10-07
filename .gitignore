@@ -48,3 +48,10 @@ app/web/
 # Node leftovers from previous backend scaffold
 server/node_modules/
 server/dist/
+
+# Local deployment destination
+/deploy/backend.json
+
+# Python deployment-tool caches
+__pycache__/
+*.pyc

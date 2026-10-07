@@ -1,0 +1,6 @@
+{
+  "ssh_target": "qodi@115.25.46.153",
+  "ssh_port": 22,
+  "remote_directory": "ai-closet",
+  "api_port": 3000
+}

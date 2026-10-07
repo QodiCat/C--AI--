@@ -30,3 +30,5 @@ Flutter 通过 API 操作当前用户数据；后端负责鉴权、数据库、A
 
 ## 2026-10-05 衣橱显示设置
 wardrobe 领域新增 WardrobeDisplayPreferences 模型、WardrobeDisplayRepository 与独立设置页，复用 ApiClient；个人中心和衣橱均进入该设置页。服务端 profile 持久化账号偏好，衣橱加载时读取本人设置和衣物，类型/季节筛选及分类按钮统一应用偏好。仅控制列表显示，组合编辑、已保存搭配、AI 不受影响。
+
+部署工具由 tools/update_backend.py 本机入口与 deploy_backend_remote.py 远端应用器组成，目标配置为 deploy/backend.json（示例入库、实际配置忽略）。发布源码置于用户家目录 releases 唯一子目录，运行目录、私密配置与数据保留；不新增 Docker 或管理员服务依赖。
