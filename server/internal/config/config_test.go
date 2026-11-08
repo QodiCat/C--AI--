@@ -44,13 +44,16 @@ func TestDatabaseURLFromPostgresVariables(t *testing.T) {
 	}
 }
 
-func TestWeatherBaseURL(t *testing.T) {
-	t.Setenv("WEATHER_BASE_URL", "")
-	if Read().WeatherBaseURL != "https://api.open-meteo.com/v1/forecast" {
-		t.Fatal("missing default weather endpoint")
+func TestAMapConfiguration(t *testing.T) {
+	t.Setenv("AMAP_BASE_URL", "")
+	t.Setenv("AMAP_API_KEY", "")
+	t.Setenv("WEATHER_BASE_URL", "https://obsolete.example.test/forecast")
+	if Read().AMapBaseURL != "https://restapi.amap.com" || Read().AMapAPIKey != "" {
+		t.Fatal("missing AMap defaults or reused unrelated credentials")
 	}
-	t.Setenv("WEATHER_BASE_URL", "https://weather.example.com/v1/forecast")
-	if Read().WeatherBaseURL != "https://weather.example.com/v1/forecast" {
-		t.Fatal("weather endpoint ignores configuration")
+	t.Setenv("AMAP_BASE_URL", "https://amap.example.test")
+	t.Setenv("AMAP_API_KEY", "test-amap-key")
+	if Read().AMapBaseURL != "https://amap.example.test" || Read().AMapAPIKey != "test-amap-key" {
+		t.Fatal("AMap ignores configuration")
 	}
 }

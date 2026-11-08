@@ -123,15 +123,17 @@ class _TodayRecommendationPageState extends State<TodayRecommendationPage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                                "当前位置：${conditions!["latitude"]}, ${conditions!["longitude"]}"),
+                                "当前位置：${conditions!["city"] ?? ""}（${conditions!["latitude"]}, ${conditions!["longitude"]}）"),
                             Text(
                                 "${conditions!["date"]} · ${conditions!["timezone"]}"),
                             Text(
-                                "${conditions!["weather"]} · 当前 ${conditions!["temperature"]}°C · 体感 ${conditions!["feelsLike"]}°C"),
+                                "${conditions!["weather"]} · 当前 ${conditions!["temperature"]}°C"),
                             Text(
-                                "今日 ${conditions!["minimum"]}–${conditions!["maximum"]}°C · 风速 ${conditions!["wind"]} km/h"),
+                                "日间 ${conditions!["dayTemperature"]}°C · 夜间 ${conditions!["nightTemperature"]}°C"),
+                            Text(
+                                "${conditions!["windDirection"]}风 · 风力 ${conditions!["windPower"]}级"),
                             Text("天气时间：${conditions!["time"]}"),
-                            const Text("天气数据：Open-Meteo"),
+                            const Text("天气数据：高德地图"),
                           ]))),
             TextField(
                 controller: scene,

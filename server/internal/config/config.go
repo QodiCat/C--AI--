@@ -9,7 +9,8 @@ import (
 )
 
 type Config struct {
-	WeatherBaseURL             string
+	AMapBaseURL                string
+	AMapAPIKey                 string
 	DashScopeAPIKey            string
 	QwenBaseURL                string
 	QwenVisionModel            string
@@ -38,7 +39,8 @@ type Config struct {
 
 func Read() Config {
 	return Config{
-		WeatherBaseURL:             getEnv("WEATHER_BASE_URL", "https://api.open-meteo.com/v1/forecast"),
+		AMapBaseURL:                getEnv("AMAP_BASE_URL", "https://restapi.amap.com"),
+		AMapAPIKey:                 getEnv("AMAP_API_KEY", ""),
 		DashScopeAPIKey:            getEnv("DASHSCOPE_API_KEY", ""),
 		QwenBaseURL:                getEnv("QWEN_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1"),
 		QwenVisionModel:            getEnv("QWEN_VISION_MODEL", "qwen3-vl-plus"),

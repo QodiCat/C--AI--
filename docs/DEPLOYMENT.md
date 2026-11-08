@@ -77,3 +77,15 @@ APK 位于 app/build/app/outputs/flutter-apk/app-release.apk。当前客户端�
 
 ## 2026-11-08 衣物编辑与备注更新
 本次需要同时更新后端与 Flutter 客户端。后端新增 items.notes（非空、默认空字符串），启动时 AutoMigrate；先备份 PostgreSQL，再更新并重启后端。真实 PostgreSQL 迁移尚未验证，不将 SQLite 自动化通过视为生产迁移通过。随后重启开发前端，或重新构建 Web/APK；只刷新旧前端资源不会加载新页面。旧客户端省略 notes 时保留已保存备注。
+
+## 2026-11-08 高德天气配置
+天气服务已由 Open-Meteo 改为高德地图。先在[高德开放平台](https://lbs.amap.com/api/webservice/gettingstarted)创建 Web 服务类型 Key，确认具有坐标转换、逆地理编码和天气查询所需服务权限与可用额度，再在实际运行后端的 server/.env 中添加（不要覆盖已有其他配置）：
+
+```dotenv
+AMAP_API_KEY=替换为高德Web服务Key
+AMAP_BASE_URL=https://restapi.amap.com
+```
+
+WEATHER_BASE_URL 已停用，可删除旧项。Key 不写入 app/.env 或 Git，也无需贴在聊天中。生产 AMAP_BASE_URL 保持默认 HTTPS；如启用高德服务端 IP 白名单，填写运行后端的出口 IP。每次生成天气通常调用四次高德服务（坐标转换、逆地理编码、实况、预报），额度需覆盖这几项服务。
+更新后端并重启，使配置加载；同时重新启动开发前端或构建/更新 Web、APK。天气响应和页面由体感/风速改为日夜预报及风力等级，因此不能只更新后端继续使用旧页面。本次无数据库结构变更。推荐接口缺少 Key 返回明确配置提示，权限/额度/上游失败阻止 AI；其他业务不因天气配置缺失而无法启动。
+本地未配置高德 Key，未执行真实高德调用或服务器部署；真实连通性需在已配置 Key 的环境点击“获取天气并生成今日搭配”验证。自动化测试只用本机 HTTP 夹具，不代表高德实际 SLA 或网络稳定性。

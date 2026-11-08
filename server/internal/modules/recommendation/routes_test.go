@@ -18,16 +18,20 @@ import (
 )
 
 type testWeather struct {
-	fail  bool
-	calls int
+	fail       bool
+	missingKey bool
+	calls      int
 }
 
 func (p *testWeather) Fetch(_ context.Context, lat, lon float64) (weather.Snapshot, error) {
 	p.calls++
+	if p.missingKey {
+		return weather.Snapshot{}, weather.ErrNotConfigured
+	}
 	if p.fail {
 		return weather.Snapshot{}, fmt.Errorf("offline")
 	}
-	return weather.Snapshot{Latitude: lat, Longitude: lon, Date: "2026-10-05", Timezone: "Asia/Shanghai", Weather: "雨", Temperature: 18, FeelsLike: 17, Minimum: 15, Maximum: 20, Wind: 12}, nil
+	return weather.Snapshot{Latitude: lat, Longitude: lon, Date: "2026-10-05", Timezone: "Asia/Shanghai", Weather: "雨", Temperature: 18, DayTemperature: 20, NightTemperature: 15, WindDirection: "东", WindPower: "≤3", City: "黄浦区", Source: "高德地图"}, nil
 }
 
 type testAI struct {
@@ -95,13 +99,18 @@ func TestTodayUsesLocationWeatherAndRejectsManualWeather(t *testing.T) {
 	if err := json.Unmarshal(result.Body.Bytes(), &response); err != nil {
 		t.Fatal(err)
 	}
-	if response.Data.Weather.Weather != "雨" || len(response.Data.Candidates) != 1 || provider.input.Weather != "雨" || !strings.Contains(provider.input.Temperature, "15.0–20.0") || provider.input.Date != "2026-10-05" || len(provider.input.Items) != 1 || provider.input.Items[0].UserID != "owner" {
+	if response.Data.Weather.Weather != "雨" || len(response.Data.Candidates) != 1 || provider.input.Weather != "雨" || !strings.Contains(provider.input.Temperature, "日间预报 20.0°C，夜间预报 15.0°C") || strings.Contains(provider.input.Temperature, "体感") || strings.Contains(provider.input.Temperature, "km/h") || provider.input.Location != "黄浦区" || provider.input.Date != "2026-10-05" || len(provider.input.Items) != 1 || provider.input.Items[0].UserID != "owner" {
 		t.Fatalf("wrong AI context: %+v", provider.input)
 	}
 	weatherProvider.fail = true
 	call(path, "owner", `{"scene":"通勤","latitude":1,"longitude":1}`, 502)
 	if provider.calls != 1 {
 		t.Fatal("AI called after weather failure")
+	}
+	weatherProvider.missingKey = true
+	missing := call(path, "owner", `{"scene":"通勤","latitude":1,"longitude":1}`, 503)
+	if !strings.Contains(missing.Body.String(), "WEATHER_NOT_CONFIGURED") || provider.calls != 1 {
+		t.Fatal("missing configuration not actionable or reached AI")
 	}
 	call("/ai/outfits/generate", "owner", `{}`, 404)
 }

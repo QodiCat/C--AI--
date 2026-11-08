@@ -16,10 +16,24 @@ func TestCoreMVPFlow(t *testing.T) {
 	weatherServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		now := time.Now().In(time.FixedZone("Asia/Shanghai", 8*3600))
-		fmt.Fprintf(w, `{"timezone":"Asia/Shanghai","current":{"time":"%s","temperature_2m":24,"apparent_temperature":25,"weather_code":0,"wind_speed_10m":10},"daily":{"time":["%s"],"temperature_2m_min":[18],"temperature_2m_max":[26]}}`, now.Format("2006-01-02T15:04"), now.Format("2006-01-02"))
+		switch r.URL.Path {
+		case "/v3/assistant/coordinate/convert":
+			fmt.Fprint(w, `{"status":"1","infocode":"10000","locations":"121.478,31.228"}`)
+		case "/v3/geocode/regeo":
+			fmt.Fprint(w, `{"status":"1","infocode":"10000","regeocode":{"addressComponent":{"adcode":"310101"}}}`)
+		case "/v3/weather/weatherInfo":
+			if r.URL.Query().Get("extensions") == "base" {
+				fmt.Fprintf(w, `{"status":"1","infocode":"10000","lives":[{"adcode":"310101","city":"黄浦区","weather":"晴","temperature":"24","winddirection":"东","windpower":"≤3","reporttime":"%s"}]}`, now.Format("2006-01-02 15:04:05"))
+			} else {
+				fmt.Fprintf(w, `{"status":"1","infocode":"10000","forecasts":[{"adcode":"310101","reporttime":"%s","casts":[{"date":"%s","daytemp":"26","nighttemp":"18"}]}]}`, now.Format("2006-01-02 15:04:05"), now.Format("2006-01-02"))
+			}
+		default:
+			t.Errorf("unexpected AMap endpoint: %s", r.URL.Path)
+		}
 	}))
 	defer weatherServer.Close()
-	t.Setenv("WEATHER_BASE_URL", weatherServer.URL)
+	t.Setenv("AMAP_BASE_URL", weatherServer.URL)
+	t.Setenv("AMAP_API_KEY", "test-key")
 
 	t.Setenv("AI_PROVIDER", "mock")
 	t.Setenv("SEED_DEMO_DATA", "true")

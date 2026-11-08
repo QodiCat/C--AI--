@@ -26,7 +26,7 @@ Flutter 通过 API 操作当前用户数据；后端负责鉴权、数据库、A
 个人资料新增独立身体数据编辑页面及 /me/body-measurements 接口，复用 User 与 ProfileRepository；围度暂不参与 AI 推荐。
 
 ## 2026-10-05 今日 AI 搭配
-导航不再包含 AI/今日双页签；我的搭配 AI 按钮也进入 TodayRecommendationPage。移除 ai_stylist 前端领域与通用 AI 生成流，只保留今日生成与共享保存。weather 领域负责 Open-Meteo HTTP 查询和天气契约，recommendation 装配天气与 AI。Flutter 使用 Geolocator 前台获取设备坐标；后台不获取定位，不以资料城市代替。
+导航不再包含 AI/今日双页签；我的搭配 AI 按钮也进入 TodayRecommendationPage。移除 ai_stylist 前端领域与通用 AI 生成流，只保留今日生成与共享保存。weather 领域负责高德 Web 服务 HTTP 查询和天气契约（2026-11-08 替代 Open-Meteo），recommendation 装配天气与 AI。Flutter 使用 Geolocator 前台获取设备坐标；后台不获取定位，不以资料城市代替。
 
 ## 2026-10-05 衣橱显示设置
 wardrobe 领域新增 WardrobeDisplayPreferences 模型、WardrobeDisplayRepository 与独立设置页，复用 ApiClient；个人中心和衣橱均进入该设置页。服务端 profile 持久化账号偏好，衣橱加载时读取本人设置和衣物，类型/季节筛选及分类按钮统一应用偏好。仅控制列表显示，组合编辑、已保存搭配、AI 不受影响。
@@ -35,3 +35,6 @@ wardrobe 领域新增 WardrobeDisplayPreferences 模型、WardrobeDisplayReposit
 
 ## 2026-11-08 衣橱视图与编辑
 wardrobe 页面支持当前页面内 2/3/4 列选择；WardrobeCard 独立负责常规/缩略卡片。ItemDetailPage 进入独立 ItemEditorPage，复用 WardrobeRepository.updateItem；保存响应更新详情，返回衣橱重新加载。备注在识别确认、编辑和详情中复用 Item.notes，不增加客户端密钥或新外部服务。
+
+## 2026-11-08 高德天气
+weather.Client 以高德坐标转换（gps）→逆地理编码获取 adcode→实况与预报查询组成一次天气请求，总时限 20 秒、单次 HTTP 10 秒；response.go 独立负责实况、预报字段与时效校验。无旧提供方回退或虚构测量，缺少 Key 只阻断推荐生成，不阻断其他业务启动。Snapshot/前端/AI 同步使用当前温度、日夜预报、风向和风力等级；不再使用体感、最高最低温或 km/h 风速。无需数据库结构变更或依赖升级。

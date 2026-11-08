@@ -40,10 +40,12 @@ void main() {
                 'timezone': 'Asia/Shanghai',
                 'weather': '雨',
                 'temperature': 18,
-                'feelsLike': 17,
-                'minimum': 15,
-                'maximum': 20,
-                'wind': 12
+                'dayTemperature': 20,
+                'nightTemperature': 15,
+                'windDirection': '东南',
+                'windPower': '≤3',
+                'city': '黄浦区',
+                'source': '高德地图'
               }
             };
           } else if (request.url.path == '/ai/outfits/save') {
@@ -67,6 +69,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(locations, 1);
     expect(find.textContaining('当前 18°C'), findsOneWidget);
+    expect(find.text('日间 20°C · 夜间 15°C'), findsOneWidget);
+    expect(find.text('东南风 · 风力 ≤3级'), findsOneWidget);
+    expect(find.text('天气数据：高德地图'), findsOneWidget);
+    expect(find.textContaining('体感'), findsNothing);
+    expect(find.textContaining('km/h'), findsNothing);
+    expect(find.textContaining('null'), findsNothing);
     await tester.scrollUntilVisible(find.text('今天穿这套'), 250,
         scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();

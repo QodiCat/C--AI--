@@ -3,7 +3,7 @@ package recommendation
 import (
 	"ai-closet-server/internal/modules/weather"
 	"context"
-	"fmt"
+	"errors"
 	"math"
 	"net/http"
 
@@ -79,14 +79,18 @@ func RegisterRoutes(router *gin.Engine, service *ai.Service, weatherProvider Wea
 		}
 		conditions, err := weatherProvider.Fetch(c.Request.Context(), lat, lon)
 		if err != nil {
-			httpapi.Error(c, 502, "WEATHER_UNAVAILABLE", "获取当前位置天气失败，请重试")
+			if errors.Is(err, weather.ErrNotConfigured) {
+				httpapi.Error(c, 503, "WEATHER_NOT_CONFIGURED", "请在后端配置高德地图 Web 服务 Key 后重试")
+				return
+			}
+			httpapi.Error(c, 502, "WEATHER_UNAVAILABLE", "获取高德天气失败，请稍后重试；若持续失败，请检查后端高德 Key、服务权限和额度")
 			return
 		}
 		result, err := service.GenerateToday(auth.CurrentUserID(c), ai.TodayInput{
 			Weather:     conditions.Weather,
-			Temperature: fmt.Sprintf("当前 %.1f°C，体感 %.1f°C，今日 %.1f–%.1f°C，风速 %.1f km/h", conditions.Temperature, conditions.FeelsLike, conditions.Minimum, conditions.Maximum, conditions.Wind),
+			Temperature: conditions.TemperatureSummary(),
 			Scene:       req.Scene,
-			Location:    conditions.Timezone,
+			Location:    conditions.City,
 			Date:        conditions.Date,
 		})
 		if err != nil {

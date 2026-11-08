@@ -92,7 +92,7 @@ func newApp(sender auth.MailSender) (*App, error) {
 	imageprocess.RegisterRoutes(router, db, imageprocess.NewProcessor(cfg), cfg)
 	outfit.RegisterRoutes(router, db)
 	profile.RegisterRoutes(router, db)
-	recommendation.RegisterRoutes(router, aiService, weather.New(cfg.WeatherBaseURL))
+	recommendation.RegisterRoutes(router, aiService, weather.New(cfg.AMapBaseURL, cfg.AMapAPIKey))
 	wearlog.RegisterRoutes(router, db)
 	oss.RegisterRoutes(router, cfg)
 

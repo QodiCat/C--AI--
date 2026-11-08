@@ -23,10 +23,16 @@ GET /outfits 支持 source 与 category 精确筛选；category 显式空值表�
 GET /me 返回 height、weight、bust、hip、waist、shoulderWidth、thighCircumference、legLength、torsoLength。PATCH /me/body-measurements 接收数字对象，仅更新已传字段，0 清除，范围 0–300；长度 cm、体重 kg。拒绝空对象及未知字段，仅操作本人。基础资料 PATCH 未传 height/weight 时保留原值。
 
 ## 2026-10-05 今日 AI 搭配
-移除 POST /ai/outfits/generate；保存 /ai/outfits/save 保留，旧 AI 搭配不删除。POST /ai/today-recommendation/generate 改为 {latitude:number,longitude:number,scene:string}；经登录认证后校验坐标范围，后端查天气再调用 AI。旧 weather/temperature 不能替代服务端查询；未传坐标返回 400，天气失败返回 502 WEATHER_UNAVAILABLE。返回 data:{candidates:[...],weather:{latitude,longitude,date,time,timezone,weather,temperature,feelsLike,minimum,maximum,wind}}。单位温度 °C、风速 km/h；查询及返回坐标四舍五入到三位小数。天气日期须匹配当地今天，当前天气超过三小时、超前超过半小时或字段缺失均拒绝。
+移除 POST /ai/outfits/generate；保存 /ai/outfits/save 保留，旧 AI 搭配不删除。POST /ai/today-recommendation/generate 改为 {latitude:number,longitude:number,scene:string}；经登录认证后校验坐标范围，后端查天气再调用 AI。旧 weather/temperature 不能替代服务端查询；未传坐标返回 400，天气失败返回 502 WEATHER_UNAVAILABLE。返回 data:{candidates:[...],weather:{...}}；天气响应字段和校验已于 2026-11-08 被下述高德契约替代，需同步更新前后端。
 
 ## 2026-10-05 衣橱显示偏好
 GET /me 新增 wardrobeDisplayPreferences，为 JSON 字符串，默认 {}；对象包含 categories、seasons 数组。PATCH /me/wardrobe-display 提交完整 {categories:[...],seasons:[...]}，两字段必传，空数组表示该维度不限制；categories 可选上装/下装/外套/裙装/鞋履/包袋/配饰，seasons 为春/夏/秋/冬，未知值/重复值/null 返回 400 INVALID_DISPLAY_PREFERENCES。仅更新当前用户的显示偏好；失败返回 500 DISPLAY_UPDATE_FAILED，成功返回当前 User。接口不限制 /items 或 AI 数据源，Flutter 在衣橱列表应用偏好。
 
 ## 2026-11-08 衣物编辑与备注
 GET /items 与 GET /items/:itemId 的 Item 新增 notes 字符串。POST /items、PATCH /items/:itemId 接受 notes（最多 2000 Unicode 字符，多行）；创建省略为 ""，编辑省略或 null 保留原备注，显式 "" 清空。超限返回 400 INVALID_REQUEST；写入失败返回 500 ITEM_CREATE_FAILED/ITEM_UPDATE_FAILED。编辑沿用完整属性快照契约，名称/两级分类/管理状态/可穿状态必填，数组字段提交数组；前端不提交图片地址，后端保留原图、抠图和归属。详情读取与写入均按当前用户限制。
+
+## 2026-11-08 高德天气契约（替代 Open-Meteo）
+POST /ai/today-recommendation/generate 请求保持 {latitude,longitude,scene}，设备 GPS 坐标在后端先取三位小数，经 /v3/assistant/coordinate/convert（coordsys=gps）转换后取三位小数，经 /v3/geocode/regeo 解析 adcode，再调用 /v3/weather/weatherInfo 的 base/all。服务端只读取所需字段，兼容逆地理 city 等无关字段为空数组。
+weather 返回 {latitude,longitude,date,time,timezone,source,city,adcode,weather,temperature,dayTemperature,nightTemperature,windDirection,windPower}；温度 °C，windPower 为原始风力等级字符串（如 ≤3），timezone 固定 Asia/Shanghai，source 为高德地图。date 为当地今天，time 为实况发布时间；不再返回 feelsLike/minimum/maximum/wind，不能把日夜预报当实测极值、风力当 km/h。前端与后端须同步更新，AI 按新字段获取天气，穿搭记录仍保存日期/天气/当前温度。
+校验实况距现在不超过 3 小时、预报发布时间不超过 24 小时且包含今天的 cast；两者超前不超过 30 分钟。午夜允许前一天最新实况和包含今天的预报，date 仍取今天。温度须为有限有效数字，0 与负温度有效；缺少地区/必需字段、日期不符、HTTP/高德业务失败均拒绝且不调用 AI。缺少 AMAP_API_KEY 返回 503 WEATHER_NOT_CONFIGURED，其他天气失败返回 502 WEATHER_UNAVAILABLE（提示检查 Key、权限及额度）；不回传上游 URL、Key 或原始错误信息。
+官方依据：[天气查询](https://lbs.amap.com/api/webservice/guide/api/weatherinfo)、[逆地理编码](https://lbs.amap.com/api/webservice/guide/api/georegeo)、[坐标转换](https://developer.amap.com/api/webservice/guide/api/convert)。

@@ -58,3 +58,10 @@ python3 tools/update_backend.py --dry-run 通过，未连接服务器。无 Go/D
 - flutter build web --release --no-pub 通过。结构检查和 git diff --check 通过，AGENTS.md 45 行。
 - 首次 Go 测试受缓存只读/临时端口限制，改用 /tmp 缓存并授权本机测试端口后通过。Flutter 使用 Linux SDK，授权缓存写入并仅对测试命令绕过代理后通过；未改系统代理。
 - 未启动真实业务服务、部署、调用收费 AI/OSS/邮件、执行真实 PostgreSQL 迁移或进行真机/客户验收。数据库迁移须部署前备份；视图档位仅当前页面状态，重新创建页面默认两列。
+
+## 2026-11-08 高德天气切换
+- Go 全套 go test ./...、go vet ./... 通过。高德本机 HTTP 夹具覆盖 GPS 转换、三位小数及经纬度顺序、行政区解析（无关 city 空数组）、实况/预报分开查询、地区匹配、当前/日夜温度与风力原文、零/负温度、午夜日期、缺少 Key、无效坐标、取消/超时、HTTP/业务/超额错误、重定向、超长/异常 JSON、缺字段及实况/预报过期和未来时间；错误不含 Key/请求 URL，不虚构体感或 km/h。
+- 推荐路由与核心 MVP 回归已改用高德契约；验证缺少 Key 返回 503 配置提示、天气失败不调用 AI、用户衣物隔离、真实天气摘要/城市/日期进入 AI，并保留旧手工天气不能覆盖后端数据的断言。
+- Flutter analyze --no-pub 无问题；flutter test --no-pub 25 项通过，天气用例校验高德来源、日夜预报/风力显示，无体感/风速/null 文案，以及天气失败重试和穿搭记录日期一致。flutter build web --release --no-pub 通过。
+- 本机 HTTP 测试经授权临时端口执行；Flutter 使用 Linux SDK 并仅对测试命令绕过代理。结构检查及 git diff --check 通过，AGENTS.md 45 行。
+- server/.env 未配置 AMAP_API_KEY（仅检查有无，未打印凭据）。未调用真实高德/收费 AI/OSS/邮件、启动业务服务、部署、真实数据库迁移或客户验收；实际天气联通和稳定性需配置有效 Web 服务 Key 后验证。
