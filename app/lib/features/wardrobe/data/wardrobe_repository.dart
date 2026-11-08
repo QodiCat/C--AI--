@@ -24,6 +24,12 @@ class WardrobeRepository {
     await _apiClient.post("/items", body: item);
   }
 
+  Future<Map<String, dynamic>> updateItem(
+      String id, Map<String, dynamic> item) async {
+    final response = await _apiClient.patch("/items/$id", body: item);
+    return Map<String, dynamic>.from(response["data"] as Map);
+  }
+
   Future<String> uploadImage(
       Uint8List bytes, String fileName, String contentType) async {
     if (bytes.length > 10 * 1024 * 1024) {

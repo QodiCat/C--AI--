@@ -59,6 +59,11 @@ void main() {
     expect(find.text('白色运动鞋'), findsOneWidget);
     expect(find.text('鞋履'), findsOneWidget);
     expect(find.text('米白色棉质衬衫'), findsNothing);
+    final notesField = find.widgetWithText(TextField, '备注');
+    await tester.ensureVisible(notesField);
+    await tester.enterText(notesField, '鞋面需擦拭');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await tester.scrollUntilVisible(find.text('保存并加入衣橱'), 250,
         scrollable: find.byType(Scrollable).first);
     await tester.tap(find.text('保存并加入衣橱'));
@@ -67,6 +72,7 @@ void main() {
     expect(saved?['categoryLevel2'], '运动鞋');
     expect(saved?['cutoutImageUrl'], candidate['cutoutImageUrl']);
     expect(saved?['material'], '');
+    expect(saved?['notes'], '鞋面需擦拭');
     expect(saved?['seasons'], ['春', '秋']);
     expect(saved?.containsKey('candidateId'), isFalse);
   });

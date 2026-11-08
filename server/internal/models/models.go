@@ -48,6 +48,7 @@ type Item struct {
 	PurchasePrice    float64   `json:"purchasePrice"`
 	PurchaseDate     string    `json:"purchaseDate"`
 	CustomTags       string    `json:"customTags"`
+	Notes            string    `gorm:"not null;default:''" json:"notes"`
 	OriginalImageURL string    `json:"originalImageUrl"`
 	CutoutImageURL   string    `json:"cutoutImageUrl"`
 	ManagementStatus string    `json:"managementStatus"`

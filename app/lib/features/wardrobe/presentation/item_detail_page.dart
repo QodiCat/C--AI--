@@ -4,16 +4,18 @@ import "../../../core/network/app_config.dart";
 import "../data/wardrobe_repository.dart";
 import "dart:convert";
 import "../models/wardrobe_item.dart";
+import "item_editor_page.dart";
 
 class ItemDetailPage extends StatefulWidget {
-  const ItemDetailPage({super.key, required this.item});
+  const ItemDetailPage({super.key, required this.item, this.repository});
   final WardrobeItem item;
+  final WardrobeRepository? repository;
   @override
   State<ItemDetailPage> createState() => _ItemDetailPageState();
 }
 
 class _ItemDetailPageState extends State<ItemDetailPage> {
-  final repository =
+  late final repository = widget.repository ??
       WardrobeRepository(ApiClient(baseUrl: AppConfig.apiBaseUrl));
   bool saving = false;
   late final Map<String, dynamic> data = Map.from(widget.item.data);
@@ -22,7 +24,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
     if (value == null || value == "" || value == "[]" || value == "null") {
       return "未填写";
     }
-    if (["seasons", "styles", "scenes"].contains(key)) {
+    if (["seasons", "styles", "scenes", "customTags"].contains(key)) {
       try {
         return (jsonDecode(value as String) as List).join("、");
       } catch (_) {
@@ -30,6 +32,17 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
       }
     }
     return value.toString();
+  }
+
+  Future<void> edit() async {
+    final updated = await Navigator.push<Map<String, dynamic>>(
+        context,
+        MaterialPageRoute(
+            builder: (_) =>
+                ItemEditorPage(data: data, repository: repository)));
+    if (updated != null && mounted) {
+      setState(() => data.addAll(updated));
+    }
   }
 
   Future<void> status(String management, String wearable) async {
@@ -82,7 +95,12 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text("单品详情")),
+      appBar: AppBar(title: const Text("单品详情"), actions: [
+        TextButton.icon(
+            onPressed: saving ? null : edit,
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text("编辑")),
+      ]),
       body: ListView(children: [
         SizedBox(
             height: 310,
@@ -94,6 +112,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           "分类": "categoryLevel1",
           "细分类": "categoryLevel2",
           "颜色": "primaryColor",
+          "辅助颜色": "secondaryColor",
           "品牌": "brand",
           "尺码": "size",
           "季节": "seasons",
@@ -102,6 +121,10 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           "材质": "material",
           "图案": "pattern",
           "版型": "fit",
+          "购买价格": "purchasePrice",
+          "购买日期": "purchaseDate",
+          "自定义标签": "customTags",
+          "备注": "notes",
           "管理状态": "managementStatus",
           "可穿状态": "wearableStatus"
         }.entries)

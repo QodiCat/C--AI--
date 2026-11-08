@@ -21,3 +21,6 @@ User 新增 bust、hip、waist、shoulder_width、thigh_circumference、leg_leng
 
 ## 2026-10-05 衣橱显示设置迁移
 User 新增 wardrobe_display_preferences 字符串列，NOT NULL DEFAULT '{}'，按账号保存分类/季节 JSON 数组；{} 或空数组表示未限制。启动 AutoMigrate 添加列，旧用户默认显示全部；回滚可保留新增列。本地 SQLite 验证旧用户迁移、数据保留及写入失败事务回滚；未执行真实 PostgreSQL 迁移。基础资料、身体数据、风格与隐私更新不清除本字段。
+
+## 2026-11-08 衣物备注迁移
+Item 新增 notes 字符串列，NOT NULL DEFAULT 空字符串；启动 AutoMigrate 添加，旧衣物默认无备注。迁移在本地 SQLite 测试验证数据保留，未执行真实 PostgreSQL 迁移。部署前备份 PostgreSQL；回滚可保留新增列。旧客户端未传 notes 时编辑保留现有备注。

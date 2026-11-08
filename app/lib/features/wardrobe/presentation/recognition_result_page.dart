@@ -37,6 +37,7 @@ class _RecognitionResultPageState extends State<RecognitionResultPage> {
   late String color = widget.candidate["primaryColor"] as String;
   @override
   void dispose() {
+    notes.dispose();
     name.dispose();
     colorController.dispose();
     categoryLevel2.dispose();
@@ -45,6 +46,7 @@ class _RecognitionResultPageState extends State<RecognitionResultPage> {
     super.dispose();
   }
 
+  final notes = TextEditingController();
   bool saving = false;
   late final repository = widget.repository ??
       WardrobeRepository(ApiClient(baseUrl: AppConfig.apiBaseUrl));
@@ -58,6 +60,7 @@ class _RecognitionResultPageState extends State<RecognitionResultPage> {
           ..remove("confidence")
           ..remove("uncertainFields"),
         "cutoutImageUrl": widget.candidate["cutoutImageUrl"],
+        "notes": notes.text.trim(),
         "material": material.text.trim(),
         "brand": brand.text.trim(),
         "name": name.text.trim().isEmpty ? "未命名单品" : name.text.trim(),
@@ -139,6 +142,12 @@ class _RecognitionResultPageState extends State<RecognitionResultPage> {
               TextField(
                   controller: brand,
                   decoration: const InputDecoration(labelText: "品牌（无法确认时留空）")),
+              TextField(
+                  controller: notes,
+                  maxLength: 2000,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: "备注")),
               const SizedBox(height: 12),
               Text("季节：${(widget.candidate['seasons'] as List).join('、')}"),
               Text("风格：${(widget.candidate['styles'] as List).join('、')}"),

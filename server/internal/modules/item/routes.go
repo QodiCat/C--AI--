@@ -29,6 +29,7 @@ type createItemRequest struct {
 	PurchasePrice    float64  `json:"purchasePrice"`
 	PurchaseDate     string   `json:"purchaseDate"`
 	CustomTags       []string `json:"customTags"`
+	Notes            *string  `json:"notes" binding:"omitempty,max=2000"`
 	OriginalImageURL string   `json:"originalImageUrl" binding:"required"`
 	CutoutImageURL   string   `json:"cutoutImageUrl"`
 	ManagementStatus string   `json:"managementStatus" binding:"required"`
@@ -52,6 +53,7 @@ type updateItemRequest struct {
 	PurchasePrice    float64  `json:"purchasePrice"`
 	PurchaseDate     string   `json:"purchaseDate"`
 	CustomTags       []string `json:"customTags"`
+	Notes            *string  `json:"notes" binding:"omitempty,max=2000"`
 	ManagementStatus string   `json:"managementStatus" binding:"required"`
 	WearableStatus   string   `json:"wearableStatus" binding:"required"`
 }
@@ -130,6 +132,10 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			UpdatedAt:        now,
 		}
 
+		if req.Notes != nil {
+			item.Notes = *req.Notes
+		}
+
 		if err := db.Create(&item).Error; err != nil {
 			httpapi.Error(c, http.StatusInternalServerError, "ITEM_CREATE_FAILED", "创建单品失败")
 			return
@@ -165,6 +171,9 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 		row.PurchasePrice = req.PurchasePrice
 		row.PurchaseDate = req.PurchaseDate
 		row.CustomTags = toJSON(req.CustomTags)
+		if req.Notes != nil {
+			row.Notes = *req.Notes
+		}
 		row.ManagementStatus = req.ManagementStatus
 		row.WearableStatus = req.WearableStatus
 		row.UpdatedAt = time.Now()

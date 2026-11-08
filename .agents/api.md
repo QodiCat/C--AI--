@@ -27,3 +27,6 @@ GET /me 返回 height、weight、bust、hip、waist、shoulderWidth、thighCircu
 
 ## 2026-10-05 衣橱显示偏好
 GET /me 新增 wardrobeDisplayPreferences，为 JSON 字符串，默认 {}；对象包含 categories、seasons 数组。PATCH /me/wardrobe-display 提交完整 {categories:[...],seasons:[...]}，两字段必传，空数组表示该维度不限制；categories 可选上装/下装/外套/裙装/鞋履/包袋/配饰，seasons 为春/夏/秋/冬，未知值/重复值/null 返回 400 INVALID_DISPLAY_PREFERENCES。仅更新当前用户的显示偏好；失败返回 500 DISPLAY_UPDATE_FAILED，成功返回当前 User。接口不限制 /items 或 AI 数据源，Flutter 在衣橱列表应用偏好。
+
+## 2026-11-08 衣物编辑与备注
+GET /items 与 GET /items/:itemId 的 Item 新增 notes 字符串。POST /items、PATCH /items/:itemId 接受 notes（最多 2000 Unicode 字符，多行）；创建省略为 ""，编辑省略或 null 保留原备注，显式 "" 清空。超限返回 400 INVALID_REQUEST；写入失败返回 500 ITEM_CREATE_FAILED/ITEM_UPDATE_FAILED。编辑沿用完整属性快照契约，名称/两级分类/管理状态/可穿状态必填，数组字段提交数组；前端不提交图片地址，后端保留原图、抠图和归属。详情读取与写入均按当前用户限制。

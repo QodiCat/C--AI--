@@ -12,6 +12,7 @@ import "batch_upload_page.dart";
 import "../models/wardrobe_item.dart";
 import "upload_processing_page.dart";
 import "item_detail_page.dart";
+import "wardrobe_card.dart";
 
 class WardrobePage extends StatefulWidget {
   const WardrobePage({super.key, this.client});
@@ -22,6 +23,7 @@ class WardrobePage extends StatefulWidget {
 
 class _WardrobePageState extends State<WardrobePage> {
   String category = "全部";
+  int columns = 2;
   String? season;
   final search = TextEditingController();
   WardrobeDisplayPreferences display = const WardrobeDisplayPreferences();
@@ -133,6 +135,25 @@ class _WardrobePageState extends State<WardrobePage> {
                   tooltip: "添加衣物"),
             ]))),
         SliverToBoxAdapter(
+            child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Wrap(
+              spacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text("视图大小"),
+                for (final count in [2, 3, 4])
+                  Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: ChoiceChip(
+                        label: Text("$count 列"),
+                        selected: columns == count,
+                        showCheckmark: false,
+                        onSelected: (_) => setState(() => columns = count),
+                      )),
+              ]),
+        )),
+        SliverToBoxAdapter(
             child: SizedBox(
                 height: 46,
                 child: ListView.separated(
@@ -186,22 +207,24 @@ class _WardrobePageState extends State<WardrobePage> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
               sliver: SliverGrid(
                   delegate: SliverChildBuilderDelegate(
-                      (context, i) => _WardrobeCard(
+                      (context, i) => WardrobeCard(
+                          compact: columns > 2,
                           item: visibleItems[i],
                           onTap: () async {
                             await Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) =>
-                                        ItemDetailPage(item: visibleItems[i])));
+                                    builder: (_) => ItemDetailPage(
+                                        item: visibleItems[i],
+                                        repository: repository)));
                             if (mounted) await _loadItems();
                           }),
                       childCount: visibleItems.length),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
                       childAspectRatio: .79,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12))),
+                      crossAxisSpacing: columns > 2 ? 6 : 12,
+                      mainAxisSpacing: columns > 2 ? 6 : 12))),
       ]));
 
   Future<void> _editDisplay() async {
@@ -373,49 +396,6 @@ class _WardrobePageState extends State<WardrobePage> {
                     },
                     child: const Text("重置筛选")),
               ])));
-}
-
-class _WardrobeCard extends StatelessWidget {
-  const _WardrobeCard({required this.item, required this.onTap});
-  final WardrobeItem item;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(17),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-          onTap: onTap,
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(
-                child: Container(
-                    width: double.infinity,
-                    color: item.tint.withValues(alpha: .68),
-                    child: item.imageUrl != null
-                        ? Image.network(item.imageUrl!,
-                            fit: BoxFit.contain,
-                            errorBuilder: (_, __, ___) =>
-                                const Icon(Icons.broken_image_outlined))
-                        : item.image != null
-                            ? Image.memory(item.image!, fit: BoxFit.cover)
-                            : Icon(item.icon,
-                                size: 80, color: const Color(0xFF9F876E)))),
-            Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 3),
-                      Text("${item.category} · ${item.color}",
-                          style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF8C877F)))
-                    ])),
-          ])));
 }
 
 class _AddChoice extends StatelessWidget {
