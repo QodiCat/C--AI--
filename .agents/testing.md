@@ -65,3 +65,7 @@ python3 tools/update_backend.py --dry-run 通过，未连接服务器。无 Go/D
 - Flutter analyze --no-pub 无问题；flutter test --no-pub 25 项通过，天气用例校验高德来源、日夜预报/风力显示，无体感/风速/null 文案，以及天气失败重试和穿搭记录日期一致。flutter build web --release --no-pub 通过。
 - 本机 HTTP 测试经授权临时端口执行；Flutter 使用 Linux SDK 并仅对测试命令绕过代理。结构检查及 git diff --check 通过，AGENTS.md 45 行。
 - server/.env 未配置 AMAP_API_KEY（仅检查有无，未打印凭据）。未调用真实高德/收费 AI/OSS/邮件、启动业务服务、部署、真实数据库迁移或客户验收；实际天气联通和稳定性需配置有效 Web 服务 Key 后验证。
+
+## 2026-11-11 高德 Key 诊断脚本
+- `python3 -m unittest discover -s tools/tests -p test_check_amap.py -v`：5 项离线测试通过，覆盖配置环境优先、错误码与网络错误脱敏、定位失败后独立天气验证、成功链路及拒绝重定向。
+- CLI 帮助、结构检查和 git diff --check 通过，AGENTS.md 45 行。未修改 Go/Dart，无业务测试重跑；未调用真实高德或部署，不宣称实际 Key 已验证。
