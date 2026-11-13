@@ -126,7 +126,7 @@ class _WardrobePageState extends State<WardrobePage> {
                         style: const TextStyle(color: Color(0xFF8B867F)))
                   ])),
               IconButton(
-                  onPressed: loading ? null : _editDisplay,
+                  onPressed: loading ? null : _showWardrobeSettings,
                   icon: const Icon(Icons.settings_outlined),
                   tooltip: "衣橱显示设置"),
               IconButton.filledTonal(
@@ -134,25 +134,6 @@ class _WardrobePageState extends State<WardrobePage> {
                   icon: const Icon(Icons.add),
                   tooltip: "添加衣物"),
             ]))),
-        SliverToBoxAdapter(
-            child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Wrap(
-              spacing: 6,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                const Text("视图大小"),
-                for (final count in [2, 3, 4])
-                  Padding(
-                      padding: const EdgeInsets.only(left: 6),
-                      child: ChoiceChip(
-                        label: Text("$count 列"),
-                        selected: columns == count,
-                        showCheckmark: false,
-                        onSelected: (_) => setState(() => columns = count),
-                      )),
-              ]),
-        )),
         SliverToBoxAdapter(
             child: SizedBox(
                 height: 46,
@@ -236,6 +217,43 @@ class _WardrobePageState extends State<WardrobePage> {
     if (saved == true && mounted) {
       await _loadItems();
     }
+  }
+
+  Future<void> _showWardrobeSettings() async {
+    final openDisplaySettings = await showModalBottomSheet<bool>(
+        context: context,
+        backgroundColor: const Color(0xFFFAF8F4),
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
+        builder: (sheetContext) => Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+            child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("衣橱设置", style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 16),
+                  const Text("视图大小"),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 8, children: [
+                    for (final count in [2, 3, 4])
+                      ChoiceChip(
+                        label: Text("$count 列"),
+                        selected: columns == count,
+                        showCheckmark: false,
+                        onSelected: (_) => setState(() => columns = count),
+                      ),
+                  ]),
+                  const SizedBox(height: 8),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.checkroom_outlined),
+                    title: const Text("类型与季节显示"),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.pop(sheetContext, true),
+                  ),
+                ])));
+    if (openDisplaySettings == true && mounted) await _editDisplay();
   }
 
   Future<void> _showAddChoices() async {

@@ -105,6 +105,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('衣橱显示设置'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('类型与季节显示'));
+    await tester.pumpAndSettle();
     for (final text in ['外套', '裙装', '包袋', '配饰', '春', '夏']) {
       await tester.tap(find.widgetWithText(FilterChip, text));
       await tester.pumpAndSettle();
@@ -126,6 +128,25 @@ void main() {
     await tester.pumpWidget(MaterialApp(home: WardrobePage(client: client)));
     await tester.pumpAndSettle();
     expect(find.text('共 2 件单品'), findsOneWidget);
+  });
+  testWidgets('view size controls are inside the wardrobe settings button',
+      (tester) async {
+    final client = ApiClient(
+        baseUrl: 'http://localhost',
+        httpClient: MockClient((request) async => response([])));
+    await tester.pumpWidget(MaterialApp(home: WardrobePage(client: client)));
+    await tester.pumpAndSettle();
+    expect(find.text('视图大小'), findsNothing);
+    expect(find.text('2 列'), findsNothing);
+    await tester.tap(find.byTooltip('衣橱显示设置'));
+    await tester.pumpAndSettle();
+    expect(find.text('视图大小'), findsOneWidget);
+    await tester.tap(find.text('3 列'));
+    await tester.pumpAndSettle();
+    expect(find.text('视图大小'), findsOneWidget);
+    await tester.tapAt(const Offset(15, 15));
+    await tester.pumpAndSettle();
+    expect(find.text('视图大小'), findsNothing);
   });
   testWidgets(
       'failed save retains selection and reset saves unrestricted defaults',

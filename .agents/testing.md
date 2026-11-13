@@ -69,3 +69,8 @@ python3 tools/update_backend.py --dry-run 通过，未连接服务器。无 Go/D
 ## 2026-11-11 高德 Key 诊断脚本
 - `python3 -m unittest discover -s tools/tests -p test_check_amap.py -v`：5 项离线测试通过，覆盖配置环境优先、错误码与网络错误脱敏、定位失败后独立天气验证、成功链路及拒绝重定向。
 - CLI 帮助、结构检查和 git diff --check 通过，AGENTS.md 45 行。未修改 Go/Dart，无业务测试重跑；未调用真实高德或部署，不宣称实际 Key 已验证。
+
+## 2026-11-13 衣橱视图设置入口
+- Flutter analyze --no-pub 无问题；衣橱显示设置专项测试 5 项通过，新增覆盖列数设置收进右上角设置面板、切换后面板仍可操作及关闭后恢复页面。
+- Dart 格式、结构检查和 git diff --check 通过。测试仅对命令绕过本机代理并使用 Flutter SDK 缓存写权限。
+- 未启动服务、部署或进行客户验收。
