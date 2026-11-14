@@ -88,3 +88,8 @@ python3 tools/update_backend.py --dry-run 通过，未连接服务器。无 Go/D
 - 初次静态分析发现拆分组件缺 key 参数和异步 context 检查，已修正。编辑返回测试初次点击屏幕外卡片文字失败，改为实际点击可见图片后全套通过，未绕过断言。
 - Dart 格式、结构检查及 git diff --check 通过，根 AGENTS.md 45 行。Flutter 经授权写 SDK 缓存并使用本机测试端口，仅测试命令绕过代理，未改系统代理。
 - 无 Go、API、依赖、配置或数据库变化，未重跑 Go 测试；未启动真实服务、构建生产包、部署、调用云服务或执行真机/客户验收。
+
+## 2026-11-14 部署与 Android 打包教程
+- 核对后端上传/编译/重启脚本、配置示例、GORM AutoMigrate，以及当前本机 Android Manifest、Gradle debug 签名、pubspec 版本与客户端配置读取方式；同步 docs/DEPLOYMENT.md、产品与工程索引和 TODO.md。
+- `python3 tools/update_backend.py --config deploy/backend.example.json --dry-run` 通过，不连接服务器；结构检查及 git diff --check 通过，AGENTS.md 45 行。
+- 仅文档变化，无业务代码测试重跑；Android 发布/签名、网络安全及 pg_dump 用法对照官方文档。教程中的正式签名片段未实际应用/编译；未连接服务器、迁移或备份真实数据库、修改私密配置、生成密钥、构建/安装新 APK 或进行手机验收。

@@ -11,7 +11,7 @@
 | [api.md](api.md) | 修改请求、响应、认证或外部服务对接 |
 | [database.md](database.md) | 修改模型、事务、迁移、兼容行为 |
 | [security.md](security.md) | 处理权限、登录、凭据或图片地址 |
-| [源码部署](../docs/DEPLOYMENT.md) | 运行、构建、服务器部署、备份 |
+| [部署与 Android 发布](../docs/DEPLOYMENT.md) | 运行、服务器备份/更新、Android 签名/打包/安装教程 |
 | [TODO.md](../TODO.md) | 每次任务开始读取，维护新增功能、进行中及已完成状态 |
 | [需求变更](../docs/需求变更.md) | 业务变化、功能验收、未决事项 |
 
