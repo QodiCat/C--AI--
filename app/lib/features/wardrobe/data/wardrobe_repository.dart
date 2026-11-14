@@ -27,7 +27,18 @@ class WardrobeRepository {
   Future<Map<String, dynamic>> updateItem(
       String id, Map<String, dynamic> item) async {
     final response = await _apiClient.patch("/items/$id", body: item);
-    return Map<String, dynamic>.from(response["data"] as Map);
+    final updated = Map<String, dynamic>.from(response["data"] as Map);
+    final expected = item['measurements'];
+    if (expected is Map) {
+      final actual = updated['measurements'];
+      if (actual is! Map ||
+          actual.length != expected.length ||
+          expected.entries.any((entry) =>
+              actual[entry.key] is! num || actual[entry.key] != entry.value)) {
+        throw const ApiException('服务器未保存实测尺寸，请确认后端已更新后重试。其他属性可能已保存。');
+      }
+    }
+    return updated;
   }
 
   Future<String> uploadImage(
