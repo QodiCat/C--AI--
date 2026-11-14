@@ -1,3 +1,6 @@
+import "../models/wardrobe_tag_statistics.dart";
+import "wardrobe_tag_statistics_sheet.dart";
+import "wardrobe_add_choice.dart";
 import "package:image_picker/image_picker.dart";
 import "package:flutter/material.dart";
 
@@ -25,6 +28,7 @@ class _WardrobePageState extends State<WardrobePage> {
   String category = "全部";
   int columns = 2;
   String? season;
+  String? tag;
   final search = TextEditingController();
   WardrobeDisplayPreferences display = const WardrobeDisplayPreferences();
   List<String> get categories => ["全部", ...display.visibleCategories];
@@ -49,6 +53,8 @@ class _WardrobePageState extends State<WardrobePage> {
       final preferences = responses[1] as WardrobeDisplayPreferences;
       final loaded = <WardrobeItem>[];
       for (final row in rows) {
+        if (row["managementStatus"] == "discarded") continue;
+        itemCustomTags(row["customTags"]);
         final uri = (row["cutoutImageUrl"] as String?)?.isNotEmpty == true
             ? row["cutoutImageUrl"] as String
             : row["originalImageUrl"] as String;
@@ -94,7 +100,11 @@ class _WardrobePageState extends State<WardrobePage> {
     super.dispose();
   }
 
-  List<WardrobeItem> get visibleItems => items.where((item) {
+  List<WardrobeItem> get visibleItems => filteredItems
+      .where((item) => WardrobeTagStatistics.matches(item.data, tag))
+      .toList();
+
+  List<WardrobeItem> get filteredItems => items.where((item) {
         final q = search.text.trim().toLowerCase();
         return display.matches(item.data) &&
             (category == "全部" || item.category == category) &&
@@ -173,6 +183,15 @@ class _WardrobePageState extends State<WardrobePage> {
                         border: OutlineInputBorder(
                             borderSide: BorderSide.none,
                             borderRadius: BorderRadius.circular(14)))))),
+        if (tag != null)
+          SliverToBoxAdapter(
+              child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: InputChip(
+                          label: Text(tag!.isEmpty ? "未设置标签" : "标签：$tag"),
+                          onDeleted: () => setState(() => tag = null))))),
         if (loading)
           const SliverFillRemaining(
               child: Center(child: CircularProgressIndicator()))
@@ -220,7 +239,7 @@ class _WardrobePageState extends State<WardrobePage> {
   }
 
   Future<void> _showWardrobeSettings() async {
-    final openDisplaySettings = await showModalBottomSheet<bool>(
+    final openDisplaySettings = await showModalBottomSheet<String>(
         context: context,
         backgroundColor: const Color(0xFFFAF8F4),
         shape: const RoundedRectangleBorder(
@@ -246,14 +265,37 @@ class _WardrobePageState extends State<WardrobePage> {
                   ]),
                   const SizedBox(height: 8),
                   ListTile(
+                    leading: const Icon(Icons.label_outline),
+                    title: const Text("自定义标签统计"),
+                    trailing: const Icon(Icons.chevron_right),
+                    enabled: !loading && loadError == null,
+                    onTap: () => Navigator.pop(sheetContext, "tags"),
+                  ),
+                  ListTile(
                     contentPadding: EdgeInsets.zero,
                     leading: const Icon(Icons.checkroom_outlined),
                     title: const Text("类型与季节显示"),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.pop(sheetContext, true),
+                    onTap: () => Navigator.pop(sheetContext, "display"),
                   ),
                 ])));
-    if (openDisplaySettings == true && mounted) await _editDisplay();
+    if (!mounted) return;
+    if (openDisplaySettings == "display") {
+      await _editDisplay();
+      return;
+    }
+    if (openDisplaySettings == "tags") {
+      final selection = await showModalBottomSheet<WardrobeTagSelection>(
+          context: context,
+          isScrollControlled: true,
+          builder: (_) => FractionallySizedBox(
+              heightFactor: .8,
+              child: WardrobeTagStatisticsSheet(
+                  selectedTag: tag,
+                  statistics: WardrobeTagStatistics(
+                      filteredItems.map((item) => item.data)))));
+      if (selection != null && mounted) setState(() => tag = selection.tag);
+    }
   }
 
   Future<void> _showAddChoices() async {
@@ -280,14 +322,14 @@ class _WardrobePageState extends State<WardrobePage> {
               const SizedBox(height: 20),
               Row(children: [
                 Expanded(
-                    child: _AddChoice(
+                    child: WardrobeAddChoice(
                         icon: Icons.photo_camera_outlined,
                         title: "拍照添加",
                         subtitle: "拍摄衣物照片\nAI自动识别与抠图",
                         onTap: () => Navigator.pop(c, "camera"))),
                 const SizedBox(width: 12),
                 Expanded(
-                    child: _AddChoice(
+                    child: WardrobeAddChoice(
                         icon: Icons.photo_library_outlined,
                         title: "从相册添加",
                         subtitle: "选择已有图片\n批量识别衣物",
@@ -409,41 +451,10 @@ class _WardrobePageState extends State<WardrobePage> {
                         search.clear();
                         category = "全部";
                         season = null;
+                        tag = null;
                       });
                       Navigator.pop(c);
                     },
                     child: const Text("重置筛选")),
               ])));
-}
-
-class _AddChoice extends StatelessWidget {
-  const _AddChoice(
-      {required this.icon,
-      required this.title,
-      required this.subtitle,
-      required this.onTap});
-  final IconData icon;
-  final String title, subtitle;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 8),
-              child: Column(children: [
-                Icon(icon, size: 42, color: const Color(0xFF625E58)),
-                const SizedBox(height: 15),
-                Text(title,
-                    style: const TextStyle(
-                        fontSize: 17, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 8),
-                Text(subtitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        fontSize: 12, height: 1.5, color: Color(0xFF969088)))
-              ]))));
 }

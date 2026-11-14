@@ -41,3 +41,6 @@ weather.Client 以高德坐标转换（gps）→逆地理编码获取 adcode→�
 
 ## 2026-11-14 衣物实测尺寸
 wardrobe/models/garment_measurement.dart 管理上衣、裤子字段、位置、量法与用途；presentation/measurement_fields.dart 复用新增/编辑表单及详情展示。尺寸为单件衣物数据，与个人身体数据分开；item/measurements.go 负责后端白名单和范围校验，无新依赖或外部服务。
+
+## 2026-11-14 自定义标签统计
+wardrobe/models/wardrobe_tag_statistics.dart 统一解析 customTags 的 JSON 字符串/数组、去空白和单件去重、精确匹配与件数排序；presentation/wardrobe_tag_statistics_sheet.dart 负责统计面板。WardrobePage 复用已加载的本人衣物及既有筛选，统计先应用类型/季节/搜索/显示设置，最后独立应用标签选择。载入时校验标签数据，失败沿用错误/重试且禁用统计，不以空结果掩盖损坏数据。原添加方式卡片拆至 wardrobe_add_choice.dart，避免页面超过 500 行。后端契约与数据库无需变更。
