@@ -150,11 +150,15 @@ void main() {
     final originalSize = tester.getSize(find.text('衬衫0').first);
     final originalVisible =
         find.textContaining(RegExp(r'^衬衫\d+$')).hitTestable().evaluate().length;
+    await tester.tap(find.byTooltip('衣橱显示设置'));
+    await tester.pumpAndSettle();
     for (final count in [3, 4, 2, 4]) {
       await tester.tap(find.widgetWithText(ChoiceChip, '$count 列'));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     }
+    Navigator.of(tester.element(find.text('衣橱设置'))).pop();
+    await tester.pumpAndSettle();
     final visible =
         find.textContaining(RegExp(r'^衬衫\d+$')).hitTestable().evaluate().length;
     expect(visible, greaterThan(originalVisible));

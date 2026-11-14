@@ -13,49 +13,51 @@ import (
 )
 
 type createItemRequest struct {
-	Name             string   `json:"name" binding:"required"`
-	CategoryLevel1   string   `json:"categoryLevel1" binding:"required"`
-	CategoryLevel2   string   `json:"categoryLevel2" binding:"required"`
-	PrimaryColor     string   `json:"primaryColor" binding:"required"`
-	SecondaryColor   string   `json:"secondaryColor"`
-	Pattern          string   `json:"pattern"`
-	Brand            string   `json:"brand"`
-	Size             string   `json:"size"`
-	Seasons          []string `json:"seasons"`
-	Styles           []string `json:"styles"`
-	Scenes           []string `json:"scenes"`
-	Material         string   `json:"material"`
-	Fit              string   `json:"fit"`
-	PurchasePrice    float64  `json:"purchasePrice"`
-	PurchaseDate     string   `json:"purchaseDate"`
-	CustomTags       []string `json:"customTags"`
-	Notes            *string  `json:"notes" binding:"omitempty,max=2000"`
-	OriginalImageURL string   `json:"originalImageUrl" binding:"required"`
-	CutoutImageURL   string   `json:"cutoutImageUrl"`
-	ManagementStatus string   `json:"managementStatus" binding:"required"`
-	WearableStatus   string   `json:"wearableStatus" binding:"required"`
+	Measurements     *map[string]float64 `json:"measurements"`
+	Name             string              `json:"name" binding:"required"`
+	CategoryLevel1   string              `json:"categoryLevel1" binding:"required"`
+	CategoryLevel2   string              `json:"categoryLevel2" binding:"required"`
+	PrimaryColor     string              `json:"primaryColor" binding:"required"`
+	SecondaryColor   string              `json:"secondaryColor"`
+	Pattern          string              `json:"pattern"`
+	Brand            string              `json:"brand"`
+	Size             string              `json:"size"`
+	Seasons          []string            `json:"seasons"`
+	Styles           []string            `json:"styles"`
+	Scenes           []string            `json:"scenes"`
+	Material         string              `json:"material"`
+	Fit              string              `json:"fit"`
+	PurchasePrice    float64             `json:"purchasePrice"`
+	PurchaseDate     string              `json:"purchaseDate"`
+	CustomTags       []string            `json:"customTags"`
+	Notes            *string             `json:"notes" binding:"omitempty,max=2000"`
+	OriginalImageURL string              `json:"originalImageUrl" binding:"required"`
+	CutoutImageURL   string              `json:"cutoutImageUrl"`
+	ManagementStatus string              `json:"managementStatus" binding:"required"`
+	WearableStatus   string              `json:"wearableStatus" binding:"required"`
 }
 
 type updateItemRequest struct {
-	Name             string   `json:"name" binding:"required"`
-	CategoryLevel1   string   `json:"categoryLevel1" binding:"required"`
-	CategoryLevel2   string   `json:"categoryLevel2" binding:"required"`
-	PrimaryColor     string   `json:"primaryColor"`
-	SecondaryColor   string   `json:"secondaryColor"`
-	Pattern          string   `json:"pattern"`
-	Brand            string   `json:"brand"`
-	Size             string   `json:"size"`
-	Seasons          []string `json:"seasons"`
-	Styles           []string `json:"styles"`
-	Scenes           []string `json:"scenes"`
-	Material         string   `json:"material"`
-	Fit              string   `json:"fit"`
-	PurchasePrice    float64  `json:"purchasePrice"`
-	PurchaseDate     string   `json:"purchaseDate"`
-	CustomTags       []string `json:"customTags"`
-	Notes            *string  `json:"notes" binding:"omitempty,max=2000"`
-	ManagementStatus string   `json:"managementStatus" binding:"required"`
-	WearableStatus   string   `json:"wearableStatus" binding:"required"`
+	Measurements     *map[string]float64 `json:"measurements"`
+	Name             string              `json:"name" binding:"required"`
+	CategoryLevel1   string              `json:"categoryLevel1" binding:"required"`
+	CategoryLevel2   string              `json:"categoryLevel2" binding:"required"`
+	PrimaryColor     string              `json:"primaryColor"`
+	SecondaryColor   string              `json:"secondaryColor"`
+	Pattern          string              `json:"pattern"`
+	Brand            string              `json:"brand"`
+	Size             string              `json:"size"`
+	Seasons          []string            `json:"seasons"`
+	Styles           []string            `json:"styles"`
+	Scenes           []string            `json:"scenes"`
+	Material         string              `json:"material"`
+	Fit              string              `json:"fit"`
+	PurchasePrice    float64             `json:"purchasePrice"`
+	PurchaseDate     string              `json:"purchaseDate"`
+	CustomTags       []string            `json:"customTags"`
+	Notes            *string             `json:"notes" binding:"omitempty,max=2000"`
+	ManagementStatus string              `json:"managementStatus" binding:"required"`
+	WearableStatus   string              `json:"wearableStatus" binding:"required"`
 }
 
 type updateStatusRequest struct {
@@ -111,6 +113,10 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			return
 		}
 
+		if !validMeasurements(req.Measurements) {
+			httpapi.Error(c, 400, "INVALID_REQUEST", "尺寸须为有效的厘米数据（大于 0 且不超过 500）")
+			return
+		}
 		now := time.Now()
 		item := models.Item{
 			ID:             newID("item"),
@@ -132,6 +138,10 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			UpdatedAt:        now,
 		}
 
+		item.Measurements = map[string]float64{}
+		if req.Measurements != nil {
+			item.Measurements = *req.Measurements
+		}
 		if req.Notes != nil {
 			item.Notes = *req.Notes
 		}
@@ -150,10 +160,17 @@ func RegisterRoutes(router *gin.Engine, db *gorm.DB) {
 			httpapi.Error(c, 400, "INVALID_REQUEST", "请求参数不合法")
 			return
 		}
+		if !validMeasurements(req.Measurements) {
+			httpapi.Error(c, 400, "INVALID_REQUEST", "尺寸须为有效的厘米数据（大于 0 且不超过 500）")
+			return
+		}
 		var row models.Item
 		if db.First(&row, "id = ? AND user_id = ?", c.Param("itemId"), auth.CurrentUserID(c)).Error != nil {
 			httpapi.Error(c, 404, "ITEM_NOT_FOUND", "未找到对应单品")
 			return
+		}
+		if req.Measurements != nil {
+			row.Measurements = *req.Measurements
 		}
 		row.Name = req.Name
 		row.CategoryLevel1 = req.CategoryLevel1

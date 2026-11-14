@@ -74,3 +74,11 @@ python3 tools/update_backend.py --dry-run 通过，未连接服务器。无 Go/D
 - Flutter analyze --no-pub 无问题；衣橱显示设置专项测试 5 项通过，新增覆盖列数设置收进右上角设置面板、切换后面板仍可操作及关闭后恢复页面。
 - Dart 格式、结构检查和 git diff --check 通过。测试仅对命令绕过本机代理并使用 Flutter SDK 缓存写权限。
 - 未启动服务、部署或进行客户验收。
+
+## 2026-11-14 衣物实测尺寸
+- Go 全套 go test ./...、go vet ./... 通过；扩展衣物 API 测试覆盖创建、替换、旧客户端省略/null 保留、清空、非法/未知/null 单项、账号隔离、写入失败及 SQLite 旧表迁移。
+- Flutter test --no-pub 共 29 项通过，覆盖裤子尺寸新增、回填、非法及折叠后校验、保存失败保留、清空、详情量法；修正此前衣橱列数测试仍使用旧入口的问题。
+- 初次测试发现新增页折叠控件缺少 Material 容器，修正后通过；提示队列测试等待修正后通过。Go 本机 HTTP 夹具与 Flutter 缓存/测试端口经授权执行，未改系统代理。
+- 未启动业务服务、部署、执行真实 PostgreSQL 迁移、调用收费服务或进行真机/客户验收。生产数据库需备份后迁移。
+
+本次最终 Flutter analyze --no-pub 无问题；结构检查与 git diff --check 通过，根 AGENTS.md 实测 45 行。未构建生产包。

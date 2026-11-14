@@ -30,31 +30,32 @@ type User struct {
 }
 
 type Item struct {
-	ID               string    `gorm:"primaryKey" json:"id"`
-	UserID           string    `gorm:"index" json:"userId"`
-	Name             string    `json:"name"`
-	CategoryLevel1   string    `json:"categoryLevel1"`
-	CategoryLevel2   string    `json:"categoryLevel2"`
-	PrimaryColor     string    `json:"primaryColor"`
-	SecondaryColor   string    `json:"secondaryColor"`
-	Pattern          string    `json:"pattern"`
-	Brand            string    `json:"brand"`
-	Size             string    `json:"size"`
-	Seasons          string    `json:"seasons"`
-	Styles           string    `json:"styles"`
-	Scenes           string    `json:"scenes"`
-	Material         string    `json:"material"`
-	Fit              string    `json:"fit"`
-	PurchasePrice    float64   `json:"purchasePrice"`
-	PurchaseDate     string    `json:"purchaseDate"`
-	CustomTags       string    `json:"customTags"`
-	Notes            string    `gorm:"not null;default:''" json:"notes"`
-	OriginalImageURL string    `json:"originalImageUrl"`
-	CutoutImageURL   string    `json:"cutoutImageUrl"`
-	ManagementStatus string    `json:"managementStatus"`
-	WearableStatus   string    `json:"wearableStatus"`
-	CreatedAt        time.Time `json:"createdAt"`
-	UpdatedAt        time.Time `json:"updatedAt"`
+	Measurements     map[string]float64 `gorm:"serializer:json;not null;default:'{}'" json:"measurements"`
+	ID               string             `gorm:"primaryKey" json:"id"`
+	UserID           string             `gorm:"index" json:"userId"`
+	Name             string             `json:"name"`
+	CategoryLevel1   string             `json:"categoryLevel1"`
+	CategoryLevel2   string             `json:"categoryLevel2"`
+	PrimaryColor     string             `json:"primaryColor"`
+	SecondaryColor   string             `json:"secondaryColor"`
+	Pattern          string             `json:"pattern"`
+	Brand            string             `json:"brand"`
+	Size             string             `json:"size"`
+	Seasons          string             `json:"seasons"`
+	Styles           string             `json:"styles"`
+	Scenes           string             `json:"scenes"`
+	Material         string             `json:"material"`
+	Fit              string             `json:"fit"`
+	PurchasePrice    float64            `json:"purchasePrice"`
+	PurchaseDate     string             `json:"purchaseDate"`
+	CustomTags       string             `json:"customTags"`
+	Notes            string             `gorm:"not null;default:''" json:"notes"`
+	OriginalImageURL string             `json:"originalImageUrl"`
+	CutoutImageURL   string             `json:"cutoutImageUrl"`
+	ManagementStatus string             `json:"managementStatus"`
+	WearableStatus   string             `json:"wearableStatus"`
+	CreatedAt        time.Time          `json:"createdAt"`
+	UpdatedAt        time.Time          `json:"updatedAt"`
 }
 
 type Outfit struct {

@@ -36,3 +36,7 @@ POST /ai/today-recommendation/generate 请求保持 {latitude,longitude,scene}�
 weather 返回 {latitude,longitude,date,time,timezone,source,city,adcode,weather,temperature,dayTemperature,nightTemperature,windDirection,windPower}；温度 °C，windPower 为原始风力等级字符串（如 ≤3），timezone 固定 Asia/Shanghai，source 为高德地图。date 为当地今天，time 为实况发布时间；不再返回 feelsLike/minimum/maximum/wind，不能把日夜预报当实测极值、风力当 km/h。前端与后端须同步更新，AI 按新字段获取天气，穿搭记录仍保存日期/天气/当前温度。
 校验实况距现在不超过 3 小时、预报发布时间不超过 24 小时且包含今天的 cast；两者超前不超过 30 分钟。午夜允许前一天最新实况和包含今天的预报，date 仍取今天。温度须为有限有效数字，0 与负温度有效；缺少地区/必需字段、日期不符、HTTP/高德业务失败均拒绝且不调用 AI。缺少 AMAP_API_KEY 返回 503 WEATHER_NOT_CONFIGURED，其他天气失败返回 502 WEATHER_UNAVAILABLE（提示检查 Key、权限及额度）；不回传上游 URL、Key 或原始错误信息。
 官方依据：[天气查询](https://lbs.amap.com/api/webservice/guide/api/weatherinfo)、[逆地理编码](https://lbs.amap.com/api/webservice/guide/api/georegeo)、[坐标转换](https://developer.amap.com/api/webservice/guide/api/convert)。
+
+## 2026-11-14 单件衣物实测尺寸
+Item 新增 measurements 数字对象（非 JSON 字符串），单位 cm。POST/PATCH /items 接受可选 measurements：创建省略/null 默认 {}，编辑省略/null 保留；传对象整体替换，{} 清空，删除单项需在完整对象中省略该键。仅允许有限数字，0 < 值 ≤ 500；未知键、字符串、null 单项及越界返回 400 INVALID_REQUEST。归属隔离、数据库失败契约沿用衣物接口。
+上衣键：length（衣长）、shoulderWidth、chest、waist、hem、sleeveLength、centerBackSleeve、upperArm、armholeDepth、backWidth、cuff、collar、neckWidth、frontNeckDepth。裤子键：waist（共用）、hip、frontRise、backRise、thigh、outseam、inseam、knee、calf、legOpening。位置键：waistPosition（距肩颈点）、backWidthPosition（距后领中心）、hipPosition（距腰头）、kneePosition（距裆底）、calfPosition（距裤脚）。量法与用途由 Flutter garment_measurement.dart 目录提供。当前不以类别拒绝字段，切换分类不会自动删除已填写尺寸。

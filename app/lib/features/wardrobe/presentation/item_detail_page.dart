@@ -1,3 +1,4 @@
+import 'measurement_fields.dart';
 import "package:flutter/material.dart";
 import "../../../core/network/api_client.dart";
 import "../../../core/network/app_config.dart";
@@ -129,6 +130,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
           "可穿状态": "wearableStatus"
         }.entries)
           ListTile(title: Text(entry.key), subtitle: Text(field(entry.value))),
+        MeasurementDetails(values: data["measurements"]),
         Padding(
             padding: const EdgeInsets.all(20),
             child: Wrap(spacing: 8, children: [

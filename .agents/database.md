@@ -24,3 +24,6 @@ User 新增 wardrobe_display_preferences 字符串列，NOT NULL DEFAULT '{}'，
 
 ## 2026-11-08 衣物备注迁移
 Item 新增 notes 字符串列，NOT NULL DEFAULT 空字符串；启动 AutoMigrate 添加，旧衣物默认无备注。迁移在本地 SQLite 测试验证数据保留，未执行真实 PostgreSQL 迁移。部署前备份 PostgreSQL；回滚可保留新增列。旧客户端未传 notes 时编辑保留现有备注。
+
+## 2026-11-14 衣物实测尺寸迁移
+Item 新增 measurements 文本列，GORM serializer:json 保存 map[string]float64，NOT NULL DEFAULT '{}'；启动 AutoMigrate 添加，旧衣物默认空对象。API 返回数字对象；旧客户端省略时编辑保留。SQLite 旧表迁移及读取已验证；未执行真实 PostgreSQL 迁移。部署前备份；回滚可保留新增列，回滚后的旧后端不提供尺寸编辑能力。

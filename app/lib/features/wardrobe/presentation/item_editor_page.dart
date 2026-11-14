@@ -1,3 +1,4 @@
+import 'measurement_fields.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../data/wardrobe_repository.dart';
@@ -39,6 +40,8 @@ class _ItemEditorPageState extends State<ItemEditorPage> {
       key: TextEditingController(text: initialText(key)),
   };
   late String category = widget.data['categoryLevel1'] as String;
+  late final measurements =
+      Map<String, dynamic>.from(widget.data['measurements'] as Map? ?? {});
   bool saving = false;
 
   String initialText(String key) {
@@ -66,10 +69,17 @@ class _ItemEditorPageState extends State<ItemEditorPage> {
   }
 
   Future<void> save() async {
-    if (!form.currentState!.validate()) return;
+    final validForm = form.currentState!.validate();
+    final error = measurementError(measurements);
+    if (error != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error)));
+    }
+    if (!validForm || error != null) return;
     setState(() => saving = true);
     final body = <String, dynamic>{
       'categoryLevel1': category,
+      'measurements': measurements,
       'managementStatus': widget.data['managementStatus'],
       'wearableStatus': widget.data['wearableStatus'],
     };
@@ -174,6 +184,10 @@ class _ItemEditorPageState extends State<ItemEditorPage> {
                                           : null),
                           validator: (v) => validate(entry.key, v),
                         )),
+                  MeasurementFields(
+                      values: measurements,
+                      category: category,
+                      enabled: !saving),
                 ]),
               )),
         ),

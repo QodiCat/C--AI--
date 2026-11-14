@@ -38,3 +38,6 @@ wardrobe 页面支持当前页面内 2/3/4 列选择；WardrobeCard 独立负责
 
 ## 2026-11-08 高德天气
 weather.Client 以高德坐标转换（gps）→逆地理编码获取 adcode→实况与预报查询组成一次天气请求，总时限 20 秒、单次 HTTP 10 秒；response.go 独立负责实况、预报字段与时效校验。无旧提供方回退或虚构测量，缺少 Key 只阻断推荐生成，不阻断其他业务启动。Snapshot/前端/AI 同步使用当前温度、日夜预报、风向和风力等级；不再使用体感、最高最低温或 km/h 风速。无需数据库结构变更或依赖升级。
+
+## 2026-11-14 衣物实测尺寸
+wardrobe/models/garment_measurement.dart 管理上衣、裤子字段、位置、量法与用途；presentation/measurement_fields.dart 复用新增/编辑表单及详情展示。尺寸为单件衣物数据，与个人身体数据分开；item/measurements.go 负责后端白名单和范围校验，无新依赖或外部服务。
